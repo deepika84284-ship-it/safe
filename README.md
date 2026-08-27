@@ -4,6 +4,7 @@
 
 ![SafeCart Banner](https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&h=400&q=80)
 
+[![Vercel Deployment](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel&logoColor=white)](https://safe-tau-three.vercel.app/)
 [![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-TailwindCSS%20v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
@@ -15,7 +16,7 @@
   <b>SafeCart</b> is a comprehensive cybersecurity & e-commerce fraud prevention platform designed from scratch to protect online shoppers and merchants from fake shopping websites, phishing scams, social media fraud, and malicious payment gateways.
 </p>
 
-[✨ Quick Start](#-quick-start-run-locally) • [🚀 Core Features](#-core-features--implementation) • [🛠️ Architecture](#-system-architecture--tech-stack) • [📖 API Reference](#-backend-api-routes) • [🛡️ Security](#-security--guardrails)
+[🌐 **Live Website Demo**](https://safe-tau-three.vercel.app/) • [✨ Quick Start](#-quick-start-run-locally) • [🚀 Core Features](#-core-features--implementation) • [🛠️ Architecture](#-system-architecture--tech-stack) • [📖 API Reference](#-backend-api-routes) • [🛡️ Security](#-security--guardrails)
 
 ---
 
