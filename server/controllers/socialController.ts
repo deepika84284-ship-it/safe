@@ -64,6 +64,34 @@ export async function scanWhatsAppNumber(req: Request, res: Response) {
 }
 
 /**
+ * Scan Combined Cross-Platform Risk (Instagram ID + WhatsApp Number)
+ */
+export async function scanCrossPlatform(req: Request, res: Response) {
+  try {
+    const { instagram, whatsapp } = req.body;
+    if (!instagram || !whatsapp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both Instagram username and WhatsApp number are required for cross-platform risk correlation.'
+      });
+    }
+
+    const { analyzeCrossPlatformRisk } = await import('../services/socialScamAnalyzer');
+    const analysis = await analyzeCrossPlatformRisk(String(instagram), String(whatsapp));
+
+    return res.json({
+      success: true,
+      analysis
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err?.message || 'Failed to analyze cross-platform correlation.'
+    });
+  }
+}
+
+/**
  * Get known social & WhatsApp threats
  */
 export async function getSocialThreats(req: Request, res: Response) {

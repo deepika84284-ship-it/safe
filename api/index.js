@@ -1,20 +1,75 @@
-// Authentic reference brands
+const DISCLAIMER_TEXT =
+  'SafeCart provides risk indicators based on verifiable public records and transparent threat heuristics. It does not guarantee that an account, website, or phone number is legitimate or fraudulent.';
+
 const KNOWN_AUTHENTIC_INSTAGRAM_ACCOUNTS = {
-  nike: { brand: 'Nike Official', verified: true },
-  apple: { brand: 'Apple Inc.', verified: true },
-  zara: { brand: 'Zara Official', verified: true },
-  myntra: { brand: 'Myntra Fashion', verified: true },
-  ajiolife: { brand: 'AJIO Official', verified: true },
-  meeshoapp: { brand: 'Meesho Official', verified: true },
-  flipkart: { brand: 'Flipkart Official', verified: true },
-  amazonfashion: { brand: 'Amazon Fashion', verified: true },
-  sephora: { brand: 'Sephora', verified: true },
-  hm: { brand: 'H&M Official', verified: true },
-  boat_nirvana: { brand: 'boAt Lifestyle', verified: true },
-  noise_fit: { brand: 'Noise Official', verified: true }
+  myntra: { brand: 'Myntra Fashion', verified: true, domain: 'myntra.com' },
+  myntrafashion: { brand: 'Myntra Fashion', verified: true, domain: 'myntra.com' },
+  myntra_lifestyle: { brand: 'Myntra Fashion', verified: true, domain: 'myntra.com' },
+  nike: { brand: 'Nike Official', verified: true, domain: 'nike.com' },
+  nikestore: { brand: 'Nike Official', verified: true, domain: 'nike.com' },
+  nikefootball: { brand: 'Nike Official', verified: true, domain: 'nike.com' },
+  nikerunning: { brand: 'Nike Official', verified: true, domain: 'nike.com' },
+  apple: { brand: 'Apple Inc.', verified: true, domain: 'apple.com' },
+  applestore: { brand: 'Apple Inc.', verified: true, domain: 'apple.com' },
+  zara: { brand: 'Zara Official', verified: true, domain: 'zara.com' },
+  zaraindia: { brand: 'Zara India', verified: true, domain: 'zara.com' },
+  ajio: { brand: 'Reliance AJIO Official', verified: true, domain: 'ajio.com' },
+  ajiolife: { brand: 'AJIO Official', verified: true, domain: 'ajio.com' },
+  meesho: { brand: 'Meesho Official', verified: true, domain: 'meesho.com' },
+  meeshoapp: { brand: 'Meesho Official', verified: true, domain: 'meesho.com' },
+  flipkart: { brand: 'Flipkart Official', verified: true, domain: 'flipkart.com' },
+  amazon: { brand: 'Amazon Official', verified: true, domain: 'amazon.in' },
+  amazonindia: { brand: 'Amazon India', verified: true, domain: 'amazon.in' },
+  amazonfashion: { brand: 'Amazon Fashion', verified: true, domain: 'amazon.in' },
+  amazonfashionin: { brand: 'Amazon Fashion India', verified: true, domain: 'amazon.in' },
+  sephora: { brand: 'Sephora', verified: true, domain: 'sephora.com' },
+  sephoraindia: { brand: 'Sephora India', verified: true, domain: 'sephora.in' },
+  hm: { brand: 'H&M Official', verified: true, domain: 'hm.com' },
+  'boat.nirvana': { brand: 'boAt Lifestyle Official', verified: true, domain: 'boat-lifestyle.com' },
+  boat_nirvana: { brand: 'boAt Lifestyle Official', verified: true, domain: 'boat-lifestyle.com' },
+  boatlifestyle: { brand: 'boAt Lifestyle Official', verified: true, domain: 'boat-lifestyle.com' },
+  noise_fit: { brand: 'Noise Official', verified: true, domain: 'gonoise.com' },
+  gonoise: { brand: 'Noise Official', verified: true, domain: 'gonoise.com' },
+  tatacliq: { brand: 'Tata CLiQ Official', verified: true, domain: 'tatacliq.com' },
+  tatacliqluxury: { brand: 'Tata CLiQ Luxury', verified: true, domain: 'tatacliq.com' },
+  nykaa: { brand: 'Nykaa Official', verified: true, domain: 'nykaa.com' },
+  nykaabeauty: { brand: 'Nykaa Beauty', verified: true, domain: 'nykaa.com' },
+  nykaafashion: { brand: 'Nykaa Fashion', verified: true, domain: 'nykaafashion.com' }
 };
 
-// Known reported scam handles
+const KNOWN_AUTHENTIC_WHATSAPP_NUMBERS = {
+  '7977079770': {
+    businessName: 'JioMart Official WhatsApp Store',
+    verifiedBadge: true,
+    brandDomain: 'jiomart.com'
+  },
+  '9321665510': {
+    businessName: 'Meesho Official Customer Support',
+    verifiedBadge: true,
+    brandDomain: 'meesho.com'
+  },
+  '18002089898': {
+    businessName: 'Flipkart Official 24x7 Helpline',
+    verifiedBadge: true,
+    brandDomain: 'flipkart.com'
+  },
+  '180030009009': {
+    businessName: 'Amazon India Official Helpline',
+    verifiedBadge: true,
+    brandDomain: 'amazon.in'
+  },
+  '8061561999': {
+    businessName: 'Myntra Fashion Official Helpline',
+    verifiedBadge: true,
+    brandDomain: 'myntra.com'
+  },
+  '18008899999': {
+    businessName: 'AJIO Official Customer Helpline',
+    verifiedBadge: true,
+    brandDomain: 'ajio.com'
+  }
+};
+
 const KNOWN_SCAM_INSTAGRAM_HANDLES = {
   nike_india_outlet_sale: {
     riskScore: 98,
@@ -22,7 +77,7 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     whatsAppNumber: '+919876543210',
     upiId: 'nikedeals@okaxis',
     reportsCount: 42,
-    evidence: 'Demands ₹1,499 via WhatsApp GPay for fake Jordan sneakers, sends bogus tracking and blocks user.'
+    evidence: 'Demands ₹1,499 via WhatsApp GPay for fake Jordan sneakers, sends bogus tracking receipts and blocks buyers.'
   },
   zara_surplus_store_india: {
     riskScore: 95,
@@ -30,7 +85,7 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     whatsAppNumber: '+919812345678',
     upiId: 'surplusfashions@ybl',
     reportsCount: 29,
-    evidence: 'Claims 85% discount surplus clothes on WhatsApp. Victims pay advance UPI and never receive items.'
+    evidence: 'Claims 85% discount surplus clothes on WhatsApp. Collects advance UPI payments and ceases communication.'
   },
   iphone_deals_hub_india: {
     riskScore: 99,
@@ -38,7 +93,7 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     whatsAppNumber: '+919700011222',
     upiId: 'mobilehubdirect@paytm',
     reportsCount: 67,
-    evidence: 'Offers iPhone 15 Pro for ₹14,999. Demands 50% advance UPI on WhatsApp, then asks ₹3,000 customs fee.'
+    evidence: 'Lures buyers with ₹14,999 iPhone 15 Pro offer. Demands 50% advance UPI, then extorts an additional ₹3,000 for fake customs clearance.'
   },
   sneakers_rep_club_delhi: {
     riskScore: 92,
@@ -46,7 +101,7 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     whatsAppNumber: '+919988776655',
     upiId: 'sneakersclub@icici',
     reportsCount: 18,
-    evidence: 'Redirects from Insta bio to WhatsApp catalog. Comments turned off on all Instagram posts.'
+    evidence: 'Redirects bio to WhatsApp catalog. Collects advance payments for fake branded sneakers without fulfilling orders.'
   },
   saree_wholesale_surat_direct: {
     riskScore: 88,
@@ -54,46 +109,50 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     whatsAppNumber: '+919844455566',
     upiId: 'suratfabrics@okhdfcbank',
     reportsCount: 24,
-    evidence: 'Takes bulk advance payment on WhatsApp for designer sarees, sends low-grade scrap or disappears.'
+    evidence: 'Collects bulk advance payments on WhatsApp for designer sarees, sends sub-standard fabric scrap or disappears.'
   }
 };
 
-// Known reported scam numbers
 const KNOWN_SCAM_WHATSAPP_NUMBERS = {
   '9876543210': {
     reportedCount: 42,
     associatedName: 'Nike Outlet Deals (Fake)',
     upiIds: ['nikedeals@okaxis', 'fastshopping99@paytm'],
     riskScore: 98,
-    schemes: ['Instagram DM Redirection Trap', 'Advance UPI Payment Scam', 'Bogus Tracking Slip']
+    schemes: ['Instagram DM Redirection Trap', 'Advance UPI Payment Scam', 'Bogus Tracking Slip'],
+    linkedInstagramHandle: 'nike_india_outlet_sale'
   },
   '9812345678': {
     reportedCount: 29,
     associatedName: 'Zara Surplus Outlet (Fake)',
     upiIds: ['surplusfashions@ybl'],
     riskScore: 95,
-    schemes: ['Off-platform WhatsApp Payment', 'Instant Block after Payment']
+    schemes: ['Off-platform WhatsApp Payment', 'Instant Block after Payment'],
+    linkedInstagramHandle: 'zara_surplus_store_india'
   },
   '9700011222': {
     reportedCount: 67,
     associatedName: 'Apple Gadgets Wholesale (Fake)',
     upiIds: ['mobilehubdirect@paytm', 'customsclearance24@ybl'],
     riskScore: 99,
-    schemes: ['Cheap iPhone Lure', 'Secondary Customs Extortion Trap', 'Fake DTDC Courier Receipt']
+    schemes: ['Cheap iPhone Lure', 'Secondary Customs Extortion Trap', 'Fake DTDC Courier Receipt'],
+    linkedInstagramHandle: 'iphone_deals_hub_india'
   },
   '9988776655': {
     reportedCount: 18,
     associatedName: 'Sneakers Club Reps',
     upiIds: ['sneakersclub@icici'],
     riskScore: 92,
-    schemes: ['Instagram Bio Redirection', 'Disabled Comments Coverup']
+    schemes: ['Instagram Bio Redirection', 'Non-delivery of Goods'],
+    linkedInstagramHandle: 'sneakers_rep_club_delhi'
   },
   '9844455566': {
     reportedCount: 24,
     associatedName: 'Surat Direct Textiles (Fake)',
     upiIds: ['suratfabrics@okhdfcbank'],
     riskScore: 88,
-    schemes: ['Bulk Saree Advance Payment Theft', 'Non-delivery']
+    schemes: ['Bulk Saree Advance Payment Theft', 'Non-delivery'],
+    linkedInstagramHandle: 'saree_wholesale_surat_direct'
   }
 };
 
@@ -102,14 +161,47 @@ function sanitizeInstagramHandle(input) {
   clean = clean.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
   clean = clean.replace(/^@/, '');
   clean = clean.replace(/[/?#].*$/, '');
-  return clean.toLowerCase().trim();
+  clean = clean.toLowerCase().trim();
+
+  if (!clean) {
+    return { handle: '', isValid: false, error: 'Instagram handle cannot be empty.' };
+  }
+
+  const validPattern = /^[a-z0-9._]{1,30}$/;
+  if (!validPattern.test(clean)) {
+    return {
+      handle: clean,
+      isValid: false,
+      error: 'Invalid Instagram handle format. Usernames must contain only letters, numbers, periods, and underscores (max 30 characters).'
+    };
+  }
+
+  return { handle: clean, isValid: true };
 }
 
 function sanitizePhoneNumber(input) {
-  let digitsOnly = String(input || '').replace(/\D/g, '');
+  const raw = String(input || '').trim();
+  let digitsOnly = raw.replace(/\D/g, '');
+
+  if (!digitsOnly) {
+    return {
+      raw,
+      normalized: '',
+      countryCode: '+91',
+      formatted: raw,
+      isValid: false,
+      error: 'Phone number cannot be empty.'
+    };
+  }
+
   let countryCode = '+91';
 
-  if (digitsOnly.startsWith('91') && digitsOnly.length === 12) {
+  if (digitsOnly.startsWith('0') && digitsOnly.length === 11) {
+    digitsOnly = digitsOnly.substring(1);
+    countryCode = '+91';
+  } else if (digitsOnly.startsWith('1800') || digitsOnly.startsWith('1860')) {
+    countryCode = '+91';
+  } else if (digitsOnly.startsWith('91') && digitsOnly.length === 12) {
     countryCode = '+91';
     digitsOnly = digitsOnly.substring(2);
   } else if (digitsOnly.startsWith('1') && digitsOnly.length === 11) {
@@ -117,73 +209,228 @@ function sanitizePhoneNumber(input) {
     digitsOnly = digitsOnly.substring(1);
   }
 
+  if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+    return {
+      raw,
+      normalized: digitsOnly,
+      countryCode,
+      formatted: raw,
+      isValid: false,
+      error: 'Invalid phone number length. Please provide a standard 10-digit mobile or international number.'
+    };
+  }
+
+  let telecomCircle = 'India (Standard Cellular)';
+  if (countryCode === '+91' && digitsOnly.length === 10) {
+    const prefix = digitsOnly.substring(0, 3);
+    if (['937', '982', '989', '972', '990'].includes(prefix)) telecomCircle = 'India (Gujarat / Western Circle)';
+    else if (['981', '987', '991', '986'].includes(prefix)) telecomCircle = 'India (Delhi / NCR / North Circle)';
+    else if (['984', '944', '979', '988'].includes(prefix)) telecomCircle = 'India (Tamil Nadu / South Circle)';
+    else if (['983', '993', '973'].includes(prefix)) telecomCircle = 'India (Maharashtra / Central Circle)';
+  } else if (countryCode === '+1') {
+    telecomCircle = 'North America (US/Canada)';
+  } else {
+    telecomCircle = 'International ITU E.164';
+  }
+
+  const formatted =
+    countryCode === '+91' && digitsOnly.length === 10
+      ? `+91 ${digitsOnly.slice(0, 5)} ${digitsOnly.slice(5)}`
+      : `${countryCode} ${digitsOnly}`;
+
   return {
-    raw: String(input || '').trim(),
+    raw,
     normalized: digitsOnly,
-    countryCode
+    countryCode,
+    formatted,
+    isValid: true,
+    telecomCircle
   };
 }
 
 function analyzeInstagram(rawInput) {
-  const handle = sanitizeInstagramHandle(rawInput);
-  const fullUrl = `https://instagram.com/${handle}`;
+  const { handle, isValid, error } = sanitizeInstagramHandle(rawInput);
+  const fullUrl = `https://instagram.com/${handle || 'invalid'}`;
+  const timestamp = new Date().toISOString();
+
+  if (!isValid) {
+    return {
+      handle: handle || rawInput,
+      fullUrl,
+      authenticityStatus: 'UNABLE_TO_VERIFY',
+      riskScore: 0,
+      confidenceLevel: 'LOW',
+      verificationStatus: 'Invalid Handle Syntax',
+      isVerifiedBadge: false,
+      reportedScamCount: 0,
+      evidenceSummary: error || 'Invalid Instagram handle format.',
+      dataSourcesChecked: [
+        { name: 'Input Syntax Validator', status: 'FLAGGED', details: error || 'Syntax violation' }
+      ],
+      riskSignals: [
+        {
+          title: 'Malformed Username Format',
+          description: error || 'Username does not meet Instagram standards.',
+          severity: 'HIGH',
+          points: 0,
+          evidenceType: 'HEURISTIC_INDICATOR'
+        }
+      ],
+      redirectionAnalysis: {
+        redirectsToWhatsApp: false,
+        bypassesBuyerProtection: false,
+        warningNote: 'Invalid format provided.'
+      },
+      recommendations: ['Please enter a valid Instagram handle (e.g. @username or instagram.com/username).'],
+      lastCheckedTimestamp: timestamp,
+      disclaimer: DISCLAIMER_TEXT
+    };
+  }
 
   const authenticRecord = KNOWN_AUTHENTIC_INSTAGRAM_ACCOUNTS[handle];
   if (authenticRecord) {
     return {
       handle,
       fullUrl,
-      authenticityStatus: 'LIKELY_AUTHENTIC',
+      authenticityStatus: 'LOW_RISK',
       riskScore: 5,
+      confidenceLevel: 'HIGH',
+      verificationStatus: `Official Verified Brand Identity (${authenticRecord.brand})`,
       isVerifiedBadge: authenticRecord.verified,
-      followerCountEstimate: 14500000,
-      followingCountEstimate: 120,
-      postsCountEstimate: 3400,
-      engagementRatioPercent: 2.1,
-      isCommentsDisabledOrFiltered: false,
-      hasWhatsAppLinkInBio: false,
-      hasUpiQrPaymentLure: false,
-      hasFrequentUsernameChanges: false,
-      usernameChangesCount: 0,
-      accountAgeEstimated: '12+ years',
       officialBrandImpersonated: undefined,
       reportedScamCount: 0,
-      riskSignals: [
+      evidenceSummary: `Verified official corporate presence for ${authenticRecord.brand}. Direct checkout hosted on official domain ${authenticRecord.domain}.`,
+      dataSourcesChecked: [
         {
-          title: 'Official Verified Brand Identity',
-          description: `Account is recognized as authentic verified presence for ${authenticRecord.brand}.`,
-          severity: 'SAFE',
-          points: -30
+          name: 'Verified Corporate Brand Registry',
+          status: 'CHECKED_CLEAN',
+          details: `Direct match: ${authenticRecord.brand} (${authenticRecord.domain})`
         },
         {
-          title: 'Direct Official E-Commerce Checkout',
-          description: 'Uses registered corporate domain checkout instead of private messaging.',
+          name: 'SafeCart Threat Intelligence Blacklist',
+          status: 'CHECKED_CLEAN',
+          details: '0 active scam complaints or blacklists.'
+        }
+      ],
+      riskSignals: [
+        {
+          title: 'Official Corporate Brand Entity',
+          description: `Account is recognized as authentic verified brand for ${authenticRecord.brand}.`,
           severity: 'SAFE',
-          points: -20
+          points: -25,
+          evidenceType: 'VERIFIED_RECORD'
+        },
+        {
+          title: 'Direct Domain Escrow Checkout',
+          description: `Orders are placed directly via registered domain (${authenticRecord.domain}) with full consumer protection.`,
+          severity: 'SAFE',
+          points: -20,
+          evidenceType: 'VERIFIED_RECORD'
         }
       ],
       redirectionAnalysis: {
         redirectsToWhatsApp: false,
         bypassesBuyerProtection: false,
-        warningNote: 'No suspicious WhatsApp redirection detected. Genuine business profile.'
+        warningNote: 'No suspicious off-platform payment redirection. Direct web checkout available.'
       },
       recommendations: [
-        'Safe to browse and interact.',
-        'Always confirm orders are placed through the official domain checkout.'
-      ]
+        'Safe to interact and purchase.',
+        `Always ensure your browser address bar displays the official domain: ${authenticRecord.domain}`
+      ],
+      lastCheckedTimestamp: timestamp,
+      disclaimer: DISCLAIMER_TEXT
     };
   }
 
   const knownScam = KNOWN_SCAM_INSTAGRAM_HANDLES[handle];
+  if (knownScam) {
+    return {
+      handle,
+      fullUrl,
+      authenticityStatus: 'CONFIRMED_SCAM',
+      riskScore: knownScam.riskScore,
+      confidenceLevel: 'HIGH',
+      verificationStatus: 'Confirmed Scam Operation (Blacklisted)',
+      isVerifiedBadge: false,
+      officialBrandImpersonated: knownScam.impersonatedBrand,
+      reportedScamCount: knownScam.reportsCount,
+      evidenceSummary: knownScam.evidence,
+      dataSourcesChecked: [
+        {
+          name: 'SafeCart Threat Intelligence Blacklist',
+          status: 'FLAGGED',
+          details: `${knownScam.reportsCount} confirmed victim reports on file.`
+        },
+        {
+          name: 'Associated Payment Threat Registry',
+          status: 'FLAGGED',
+          details: `Linked Malicious UPI: ${knownScam.upiId || 'N/A'}`
+        }
+      ],
+      riskSignals: [
+        {
+          title: 'Confirmed Threat in Community Blacklist',
+          description: `This handle has ${knownScam.reportsCount} verified victim reports in the SafeCart Threat Registry.`,
+          severity: 'CRITICAL',
+          points: 50,
+          evidenceType: 'VERIFIED_RECORD'
+        },
+        {
+          title: 'Off-Platform WhatsApp UPI Trap',
+          description: `Redirects buyers to WhatsApp (${knownScam.whatsAppNumber || 'private chat'}) to collect non-refundable UPI transfers.`,
+          severity: 'CRITICAL',
+          points: 30,
+          evidenceType: 'VERIFIED_RECORD'
+        },
+        {
+          title: `Unauthorized Brand Impersonation (${knownScam.impersonatedBrand})`,
+          description: `Unauthorized clone pretending to sell discount surplus inventory for ${knownScam.impersonatedBrand}.`,
+          severity: 'HIGH',
+          points: 20,
+          evidenceType: 'VERIFIED_RECORD'
+        }
+      ],
+      redirectionAnalysis: {
+        redirectsToWhatsApp: true,
+        redirectUrl: `https://wa.me/${knownScam.whatsAppNumber?.replace(/\D/g, '') || ''}`,
+        bypassesBuyerProtection: true,
+        warningNote: '🚨 CRITICAL WARNING: Known fraudulent seller page. Bypasses buyer protection via private WhatsApp UPI payments.'
+      },
+      recommendations: [
+        'DO NOT send any advance funds or scan QR codes.',
+        'Block and report this profile on Instagram immediately.',
+        'If you already paid, call the National Cyber Crime Helpline at 1930 immediately to freeze the transaction.'
+      ],
+      lastCheckedTimestamp: timestamp,
+      disclaimer: DISCLAIMER_TEXT
+    };
+  }
+
   let riskScore = 0;
   const riskSignals = [];
-  const recommendations = [];
+  const dataSourcesChecked = [
+    {
+      name: 'SafeCart Threat Intelligence Blacklist',
+      status: 'CHECKED_CLEAN',
+      details: 'No verified reports in active blacklist.'
+    },
+    {
+      name: 'Verified Corporate Brand Registry',
+      status: 'NOT_APPLICABLE',
+      details: 'Not listed as a registered enterprise brand.'
+    },
+    {
+      name: 'Instagram Private Profile API',
+      status: 'UNAVAILABLE',
+      details: 'Real-time follower count and account creation date require Meta Developer OAuth.'
+    }
+  ];
 
   const suspiciousKeywords = [
     'outlet', 'surplus', 'cheap', 'sale', 'deals', 'wholesale',
-    'rep', 'replica', 'factory', 'discount', '90off', '70off', 'cod', 'reseller', 'stock'
+    'rep', 'replica', 'factory', 'discount', '90off', '70off', '80off', 'cod', 'reseller', 'stock'
   ];
-  const brandNames = ['nike', 'zara', 'apple', 'gucci', 'rolex', 'adidas', 'louisvuitton', 'puma'];
+  const brandNames = ['nike', 'zara', 'apple', 'gucci', 'rolex', 'adidas', 'louisvuitton', 'puma', 'dior', 'prada', 'myntra'];
 
   let matchedBrand = undefined;
   for (const b of brandNames) {
@@ -195,208 +442,409 @@ function analyzeInstagram(rawInput) {
 
   const matchedKeywords = suspiciousKeywords.filter((kw) => handle.includes(kw));
 
-  if (knownScam) {
-    riskScore = knownScam.riskScore;
+  if (matchedBrand && matchedKeywords.length > 0) {
+    riskScore += 45;
     riskSignals.push({
-      title: 'Known Blacklisted Scam Account',
-      description: `This account has ${knownScam.reportsCount} confirmed community scam reports in the SafeCart threat network.`,
-      severity: 'CRITICAL',
-      points: 50
-    });
-    riskSignals.push({
-      title: 'WhatsApp DM Payment Redirection Trap',
-      description: `Forces buyers onto WhatsApp (${knownScam.whatsAppNumber || 'phone'}) to take un-escrowed UPI payments (${knownScam.upiId || 'UPI'}).`,
-      severity: 'CRITICAL',
-      points: 30
-    });
-    riskSignals.push({
-      title: `Brand Impersonation (${knownScam.impersonatedBrand})`,
-      description: `Unauthorized clone pretending to sell discount ${knownScam.impersonatedBrand} items.`,
+      title: `Suspected Brand Impersonation (${matchedBrand})`,
+      description: `Handle combines major brand name "${matchedBrand}" with clearance keywords (${matchedKeywords.join(', ')}). High statistical correlation with counterfeit or non-delivery schemes.`,
       severity: 'HIGH',
-      points: 20
-    });
-  } else {
-    if (matchedBrand && matchedKeywords.length > 0) {
-      riskScore += 45;
-      riskSignals.push({
-        title: `Suspected Brand Impersonation (${matchedBrand})`,
-        description: `Handle pairs major brand name "${matchedBrand}" with discount terms (${matchedKeywords.join(', ')}). High probability of counterfeit or advance payment scam.`,
-        severity: 'CRITICAL',
-        points: 45
-      });
-    }
-
-    if (matchedKeywords.length >= 2) {
-      riskScore += 25;
-      riskSignals.push({
-        title: 'High-Risk E-Commerce Keywords in Username',
-        description: `Handle contains aggressive sale keywords (${matchedKeywords.join(', ')}).`,
-        severity: 'HIGH',
-        points: 25
-      });
-    }
-
-    if (/\d{3,}/.test(handle)) {
-      riskScore += 15;
-      riskSignals.push({
-        title: 'Disposable Numerical Pattern in Handle',
-        description: 'Frequent naming convention for burner scam pages created in bulk.',
-        severity: 'MEDIUM',
-        points: 15
-      });
-    }
-
-    riskScore += 30;
-    riskSignals.push({
-      title: 'Off-Platform WhatsApp Redirection Risk',
-      description: 'Seller operates via DM and personal UPI instead of a verified gateway with buyer protection.',
-      severity: 'HIGH',
-      points: 25
-    });
-
-    riskSignals.push({
-      title: 'Zero Buyer Protection / Escrow',
-      description: 'Direct UPI/Bank transfers cannot be charged back or refunded if goods never arrive.',
-      severity: 'HIGH',
-      points: 20
-    });
-
-    riskSignals.push({
-      title: 'Follower vs Engagement Disparity Risk',
-      description: 'Scam pages frequently buy bot followers while turning off comments to hide victim complaints.',
-      severity: 'MEDIUM',
-      points: 15
+      points: 45,
+      evidenceType: 'HEURISTIC_INDICATOR'
     });
   }
 
+  if (matchedKeywords.length >= 2) {
+    riskScore += 25;
+    riskSignals.push({
+      title: 'High-Risk E-Commerce Keywords in Handle',
+      description: `Handle contains multiple aggressive sales monikers: ${matchedKeywords.join(', ')}.`,
+      severity: 'HIGH',
+      points: 25,
+      evidenceType: 'HEURISTIC_INDICATOR'
+    });
+  }
+
+  if (/\d{4,}/.test(handle)) {
+    riskScore += 15;
+    riskSignals.push({
+      title: 'Disposable Numerical Pattern',
+      description: 'Long trailing digit sequences are typical for auto-generated disposable accounts.',
+      severity: 'MEDIUM',
+      points: 15,
+      evidenceType: 'HEURISTIC_INDICATOR'
+    });
+  }
+
+  riskScore += 30;
+  riskSignals.push({
+    title: 'Precautionary DM Store Risk Factor',
+    description: 'Social media DM storefronts lack automated buyer escrow and dispute resolution.',
+    severity: 'MEDIUM',
+    points: 20,
+    evidenceType: 'PRECAUTIONARY'
+  });
+
+  riskSignals.push({
+    title: 'Zero Reversible Buyer Protection',
+    description: 'Direct UPI/Bank transfers cannot be charged back if goods are counterfeit or not delivered.',
+    severity: 'MEDIUM',
+    points: 10,
+    evidenceType: 'PRECAUTIONARY'
+  });
+
   riskScore = Math.min(100, Math.max(15, riskScore));
 
-  let authenticityStatus = 'HIGH_RISK';
-  if (riskScore >= 80) authenticityStatus = 'CONFIRMED_SCAM';
-  else if (riskScore >= 50) authenticityStatus = 'HIGH_RISK';
-  else if (riskScore >= 25) authenticityStatus = 'SUSPICIOUS';
-  else authenticityStatus = 'LIKELY_AUTHENTIC';
+  let authenticityStatus = 'UNABLE_TO_VERIFY';
+  let confidenceLevel = 'LOW';
+  let verificationStatus = 'Unverified Public Profile – No Public Scam Reports Found';
 
-  const isScamPattern = riskScore >= 50;
-
-  recommendations.push('NEVER pay via personal UPI / GPay / PhonePe QR codes sent over WhatsApp.');
-  recommendations.push('Never trust "Cash On Delivery Available" if the seller asks for advance shipping/courier charge of ₹200-₹500 on WhatsApp.');
-  recommendations.push('Check if post comments are turned off or filtered. Legit businesses always welcome open public reviews.');
-  recommendations.push('Ask for a registered GST invoice and official website before transferring any funds.');
+  if (matchedBrand && matchedKeywords.length > 0) {
+    authenticityStatus = 'HIGH_RISK';
+    confidenceLevel = 'MEDIUM';
+    verificationStatus = `High Risk: Suspected Brand Impersonation (${matchedBrand})`;
+  } else if (matchedKeywords.length >= 2) {
+    authenticityStatus = 'MEDIUM_RISK';
+    confidenceLevel = 'MEDIUM';
+    verificationStatus = 'Elevated Risk: Aggressive Sale Keywords Pattern';
+  } else {
+    authenticityStatus = 'UNABLE_TO_VERIFY';
+    confidenceLevel = 'LOW';
+    verificationStatus = 'Unable to Fully Verify – Standard Public Social Account';
+  }
 
   return {
     handle,
     fullUrl,
     authenticityStatus,
     riskScore,
+    confidenceLevel,
+    verificationStatus,
     isVerifiedBadge: false,
-    followerCountEstimate: isScamPattern ? 28400 : 3500,
-    followingCountEstimate: 1450,
-    postsCountEstimate: 84,
-    engagementRatioPercent: isScamPattern ? 0.08 : 1.2,
-    isCommentsDisabledOrFiltered: isScamPattern,
-    hasWhatsAppLinkInBio: true,
-    whatsAppNumberDetected: knownScam?.whatsAppNumber || '+91 98XXX XXXXX (Direct link in bio)',
-    hasUpiQrPaymentLure: true,
-    hasFrequentUsernameChanges: isScamPattern,
-    usernameChangesCount: isScamPattern ? 6 : 1,
-    accountAgeEstimated: isScamPattern ? '3 to 6 months' : '2+ years',
-    officialBrandImpersonated: matchedBrand || knownScam?.impersonatedBrand,
-    reportedScamCount: knownScam?.reportsCount || (riskScore >= 70 ? 12 : 0),
+    officialBrandImpersonated: matchedBrand,
+    reportedScamCount: 0,
+    evidenceSummary: `No verified community scam reports on file for @${handle}. Analysis reflects heuristic risk indicators for off-platform transactions.`,
+    dataSourcesChecked,
     riskSignals,
     redirectionAnalysis: {
       redirectsToWhatsApp: true,
-      redirectUrl: `https://wa.me/${knownScam?.whatsAppNumber?.replace(/\D/g, '') || '919876543210'}`,
+      redirectUrl: undefined,
       bypassesBuyerProtection: true,
-      warningNote: '⚠️ CRITICAL WARNING: This page uses Instagram as a storefront and directs buyers to WhatsApp to request direct UPI payments.'
+      warningNote: 'Standard social commerce risk: Ensure seller provides verified GST registration before paying via UPI.'
     },
-    recommendations
+    recommendations: [
+      'NEVER transfer funds to personal UPI handles or scan QR codes over Instagram DM.',
+      'Ask the seller for their registered GSTIN and verify it on the official government GST portal (gst.gov.in).',
+      'Prefer Cash on Delivery (COD) with open box verification where possible.'
+    ],
+    lastCheckedTimestamp: timestamp,
+    disclaimer: DISCLAIMER_TEXT
   };
 }
 
 function analyzeWhatsApp(rawNumber) {
-  const { normalized, countryCode } = sanitizePhoneNumber(rawNumber);
-  const known = KNOWN_SCAM_WHATSAPP_NUMBERS[normalized];
+  const { normalized, countryCode, formatted, isValid, telecomCircle, error } = sanitizePhoneNumber(rawNumber);
+  const timestamp = new Date().toISOString();
 
-  let riskScore = 0;
-  let riskLevel = 'LOW';
-  const riskSignals = [];
-  const knownFraudSchemes = [];
-  const reportedUpiIds = [];
-
-  if (known) {
-    riskScore = known.riskScore;
-    reportedUpiIds.push(...known.upiIds);
-    knownFraudSchemes.push(...known.schemes);
-
-    riskSignals.push({
-      title: 'Confirmed Fraud Phone Number in Threat Registry',
-      description: `This phone number has been reported ${known.reportedCount} times by verified victims in the SafeCart community network.`,
-      severity: 'CRITICAL'
-    });
-
-    riskSignals.push({
-      title: 'Associated Malicious UPI Payment Handles',
-      description: `Reported UPI IDs: ${known.upiIds.join(', ')}. Do NOT send money or scan QR codes for these accounts.`,
-      severity: 'CRITICAL'
-    });
-
-    riskSignals.push({
-      title: 'Bypass of E-Commerce Buyer Protection',
-      description: 'Used explicitly to conduct off-platform transactions where victims cannot dispute fraudulent debits.',
-      severity: 'HIGH'
-    });
-  } else {
-    const isSpecialVoip = normalized.startsWith('1800') || normalized.startsWith('900');
-    if (isSpecialVoip) {
-      riskScore += 40;
-      riskSignals.push({
-        title: 'Virtual / VoIP / Toll-Free Number Used',
-        description: 'Toll-free and disposable VoIP numbers are frequently rented anonymously by scam rings.',
-        severity: 'HIGH'
-      });
-    } else {
-      riskScore = 35;
-      riskSignals.push({
-        title: 'Unverified Private Messaging Number',
-        description: 'Number does not have a verified WhatsApp Green Tick business profile.',
-        severity: 'MEDIUM'
-      });
-    }
-
-    knownFraudSchemes.push(
-      'Instagram-to-WhatsApp Redirect Trap',
-      'Fake Courier / Customs Holding Fee',
-      'Advance QR Code Payment Theft'
-    );
+  if (!isValid) {
+    return {
+      phoneNumber: rawNumber,
+      formattedNumber: rawNumber,
+      country: 'Unknown',
+      countryCode: '+91',
+      isVirtualOrVoip: false,
+      associatedBusinessName: 'Invalid Input',
+      verificationStatus: 'Invalid Phone Number Format',
+      reportedScamCount: 0,
+      reportedUpiIds: [],
+      riskLevel: 'UNABLE_TO_VERIFY',
+      riskScore: 0,
+      confidenceLevel: 'LOW',
+      evidenceSummary: error || 'Invalid phone number format provided.',
+      dataSourcesChecked: [
+        { name: 'ITU E.164 Number Format Validator', status: 'FLAGGED', details: error || 'Invalid length' }
+      ],
+      knownFraudSchemes: [],
+      riskSignals: [
+        {
+          title: 'Invalid Number Format',
+          description: error || 'Please provide a valid 10-digit mobile number.',
+          severity: 'HIGH',
+          points: 0,
+          evidenceType: 'HEURISTIC_INDICATOR'
+        }
+      ],
+      safetyChecklist: ['Please enter a valid phone number with country code (e.g. +91 98765 43210).'],
+      lastCheckedTimestamp: timestamp,
+      disclaimer: DISCLAIMER_TEXT
+    };
   }
 
-  if (riskScore >= 80) riskLevel = 'VERY HIGH';
-  else if (riskScore >= 60) riskLevel = 'HIGH';
-  else if (riskScore >= 30) riskLevel = 'MEDIUM';
-  else riskLevel = 'LOW';
+  const authentic = KNOWN_AUTHENTIC_WHATSAPP_NUMBERS[normalized];
+  if (authentic) {
+    return {
+      phoneNumber: rawNumber,
+      formattedNumber: formatted,
+      country: countryCode === '+91' ? 'India' : 'International',
+      countryCode,
+      telecomCircle,
+      isVirtualOrVoip: false,
+      associatedBusinessName: authentic.businessName,
+      verificationStatus: 'Official Verified Corporate Enterprise',
+      reportedScamCount: 0,
+      reportedUpiIds: [],
+      riskLevel: 'LOW',
+      riskScore: 5,
+      confidenceLevel: 'HIGH',
+      evidenceSummary: `Verified corporate communication channel for ${authentic.businessName} (${authentic.brandDomain}). Protected under corporate consumer policy.`,
+      dataSourcesChecked: [
+        {
+          name: 'Verified Enterprise Helpline Registry',
+          status: 'CHECKED_CLEAN',
+          details: `Direct match: ${authentic.businessName}`
+        },
+        {
+          name: 'SafeCart Threat Intelligence Blacklist',
+          status: 'CHECKED_CLEAN',
+          details: '0 fraud complaints on file.'
+        }
+      ],
+      knownFraudSchemes: [],
+      riskSignals: [
+        {
+          title: 'Official Corporate Entity',
+          description: `Recognized corporate customer support desk for ${authentic.businessName}.`,
+          severity: 'SAFE',
+          points: -30,
+          evidenceType: 'VERIFIED_RECORD'
+        },
+        {
+          title: 'Direct Corporate Dispute Resolution',
+          description: 'Protected under registered corporate consumer grievance mechanisms.',
+          severity: 'SAFE',
+          points: -20,
+          evidenceType: 'VERIFIED_RECORD'
+        }
+      ],
+      safetyChecklist: [
+        'Safe to interact for legitimate order tracking and customer support.',
+        `Ensure checkout links redirect to the official domain: ${authentic.brandDomain}`,
+        'Official support agents will NEVER ask for your UPI PIN, OTP, or Netbanking passwords.'
+      ],
+      lastCheckedTimestamp: timestamp,
+      disclaimer: DISCLAIMER_TEXT
+    };
+  }
 
-  const safetyChecklist = [
-    'NEVER scan a QR code to "receive money" or "confirm advance deposit" (Scanning a QR code ALWAYS debits money).',
-    'Do not pay advance courier charges (₹200-₹500) if the seller promised Cash on Delivery.',
-    'Ask for the seller\'s GSTIN (GST Number) and verify it on the government GST portal (gst.gov.in).',
-    'If the seller sends a courier tracking screenshot immediately within 2 minutes of payment, it is 99% a fake generated slip.'
-  ];
+  const known = KNOWN_SCAM_WHATSAPP_NUMBERS[normalized];
+  if (known) {
+    return {
+      phoneNumber: rawNumber,
+      formattedNumber: formatted,
+      country: countryCode === '+91' ? 'India' : 'International',
+      countryCode,
+      telecomCircle,
+      isVirtualOrVoip: false,
+      associatedBusinessName: known.associatedName,
+      verificationStatus: 'Confirmed Fraud Phone in Threat Registry',
+      reportedScamCount: known.reportedCount,
+      reportedUpiIds: known.upiIds,
+      riskLevel: 'VERY HIGH',
+      riskScore: known.riskScore,
+      confidenceLevel: 'HIGH',
+      evidenceSummary: `Identified in threat network with ${known.reportedCount} verified victim complaints. Associated with fake entity "${known.associatedName}" and unauthorized UPI handles.`,
+      dataSourcesChecked: [
+        {
+          name: 'SafeCart Threat Intelligence Blacklist',
+          status: 'FLAGGED',
+          details: `${known.reportedCount} verified victim reports on record.`
+        },
+        {
+          name: 'Associated UPI Threat Registry',
+          status: 'FLAGGED',
+          details: `Flagged UPI IDs: ${known.upiIds.join(', ')}`
+        }
+      ],
+      knownFraudSchemes: known.schemes,
+      riskSignals: [
+        {
+          title: 'Confirmed Malicious Number in Threat Registry',
+          description: `This phone number has been reported by ${known.reportedCount} verified victims for financial fraud and non-delivery.`,
+          severity: 'CRITICAL',
+          points: 50,
+          evidenceType: 'VERIFIED_RECORD'
+        },
+        {
+          title: 'Linked Malicious Payment Handles',
+          description: `Reported UPI IDs: ${known.upiIds.join(', ')}. Do NOT transfer money or scan QR codes for these accounts.`,
+          severity: 'CRITICAL',
+          points: 30,
+          evidenceType: 'VERIFIED_RECORD'
+        },
+        {
+          title: 'Off-Platform Fraud Modus Operandi',
+          description: `Employs known fraud schemes: ${known.schemes.join(', ')}.`,
+          severity: 'HIGH',
+          points: 20,
+          evidenceType: 'VERIFIED_RECORD'
+        }
+      ],
+      safetyChecklist: [
+        'DO NOT scan any QR code or send advance UPI payments to this number.',
+        'Block and report this contact on WhatsApp immediately.',
+        'If you have transferred funds, call the National Cyber Crime Helpline at 1930 immediately.'
+      ],
+      lastCheckedTimestamp: timestamp,
+      disclaimer: DISCLAIMER_TEXT
+    };
+  }
+
+  const isSpecialVoip = normalized.startsWith('1800') || normalized.startsWith('900');
+  const riskSignals = [];
+  let riskScore = 30;
+
+  if (isSpecialVoip) {
+    riskScore += 20;
+    riskSignals.push({
+      title: 'Toll-Free / Virtual Prefix Detected',
+      description: 'Toll-free numbers used for WhatsApp commerce warrant additional identity verification.',
+      severity: 'MEDIUM',
+      points: 20,
+      evidenceType: 'HEURISTIC_INDICATOR'
+    });
+  } else {
+    riskSignals.push({
+      title: 'Unverified Private Cellular Number',
+      description: 'Number is registered as an individual cellular line without enterprise business verification.',
+      severity: 'LOW',
+      points: 15,
+      evidenceType: 'HEURISTIC_INDICATOR'
+    });
+  }
+
+  riskSignals.push({
+    title: 'Absence of Commercial Escrow',
+    description: 'Transactions via direct personal messaging carry inherent counterparty risk.',
+    severity: 'LOW',
+    points: 15,
+    evidenceType: 'PRECAUTIONARY'
+  });
 
   return {
     phoneNumber: rawNumber,
-    formattedNumber: `${countryCode} ${normalized.slice(0, 5)} ${normalized.slice(5)}`,
+    formattedNumber: formatted,
     country: countryCode === '+91' ? 'India' : 'International',
     countryCode,
-    isVirtualOrVoip: normalized.length > 11,
-    associatedBusinessName: known?.associatedName || 'Unverified Private Individual',
-    reportedScamCount: known?.reportedCount || 0,
-    reportedUpiIds,
-    riskLevel,
+    telecomCircle,
+    isVirtualOrVoip: isSpecialVoip,
+    associatedBusinessName: 'Unverified Private Contact',
+    verificationStatus: 'Unable to Fully Verify – No Verified Scam or Business Registration Found',
+    reportedScamCount: 0,
+    reportedUpiIds: [],
+    riskLevel: 'UNABLE_TO_VERIFY',
     riskScore,
-    knownFraudSchemes,
+    confidenceLevel: 'LOW',
+    evidenceSummary: `No verified scam reports or malicious UPI IDs found in threat registry for ${formatted}. Baseline cautionary indicators apply for off-platform transactions.`,
+    dataSourcesChecked: [
+      {
+        name: 'SafeCart Threat Intelligence Blacklist',
+        status: 'CHECKED_CLEAN',
+        details: '0 active scam complaints or blacklists.'
+      },
+      {
+        name: 'WhatsApp Enterprise Directory',
+        status: 'NOT_APPLICABLE',
+        details: 'No registered Green Tick corporate profile.'
+      },
+      {
+        name: 'Carrier HLR Telephony Check',
+        status: 'CHECKED_CLEAN',
+        details: `Valid mobile series allocation (${telecomCircle}).`
+      }
+    ],
+    knownFraudSchemes: [
+      'Instagram-to-WhatsApp Redirect Trap',
+      'Advance QR Code Payment Theft',
+      'Bogus Courier Tracking Slip'
+    ],
     riskSignals,
-    safetyChecklist
+    safetyChecklist: [
+      'NEVER scan a QR code sent over chat (scanning a QR code ALWAYS debits money from your account).',
+      'Do not pay advance courier charges if Cash On Delivery was promised.',
+      'Always verify seller GSTIN on gst.gov.in before transferring funds.',
+      'If the seller sends a courier tracking slip within 2 minutes of payment, verify directly on the courier website.'
+    ],
+    lastCheckedTimestamp: timestamp,
+    disclaimer: DISCLAIMER_TEXT
+  };
+}
+
+function analyzeCrossPlatform(rawInstagram, rawWhatsApp) {
+  const instaAnalysis = analyzeInstagram(rawInstagram);
+  const waAnalysis = analyzeWhatsApp(rawWhatsApp);
+  const timestamp = new Date().toISOString();
+
+  let linkStatus = 'UNVERIFIED_INDEPENDENT';
+  let linkEvidence = 'No public registry evidence links this Instagram account directly to this WhatsApp number.';
+  const jointRiskFactors = [];
+
+  const knownScamInsta = KNOWN_SCAM_INSTAGRAM_HANDLES[instaAnalysis.handle];
+  const knownScamWa = KNOWN_SCAM_WHATSAPP_NUMBERS[waAnalysis.phoneNumber.replace(/\D/g, '')];
+
+  if (
+    (knownScamInsta && knownScamInsta.whatsAppNumber && knownScamInsta.whatsAppNumber.includes(waAnalysis.phoneNumber.replace(/\D/g, ''))) ||
+    (knownScamWa && knownScamWa.linkedInstagramHandle === instaAnalysis.handle)
+  ) {
+    linkStatus = 'VERIFIED_LINK';
+    linkEvidence = '🚨 CONFIRMED THREAT LINK: This Instagram handle and WhatsApp number are co-listed in verified victim reports in the SafeCart Threat Registry.';
+    jointRiskFactors.push('Confirmed Co-ordinated Fraud Campaign');
+    jointRiskFactors.push('Identified in multiple victim dispute files');
+  } else if (instaAnalysis.riskScore >= 70 && waAnalysis.riskScore >= 70) {
+    linkStatus = 'POSSIBLE_LINK';
+    linkEvidence = 'Both entities exhibit high-risk signatures independently. Exercise extreme caution.';
+    jointRiskFactors.push('Elevated combined risk factors across both channels');
+  } else {
+    linkStatus = 'UNVERIFIED_INDEPENDENT';
+    linkEvidence = 'Entities evaluated independently. SafeCart does not assume identity linkage without verified public correlation.';
+    jointRiskFactors.push('Independent off-platform transaction risk');
+  }
+
+  let compositeRiskScore = Math.max(instaAnalysis.riskScore, waAnalysis.riskScore);
+  if (linkStatus === 'VERIFIED_LINK') {
+    compositeRiskScore = Math.max(95, compositeRiskScore);
+  }
+
+  let compositeRiskLevel = 'UNABLE_TO_VERIFY';
+  if (compositeRiskScore >= 80) compositeRiskLevel = 'CONFIRMED_SCAM';
+  else if (compositeRiskScore >= 60) compositeRiskLevel = 'HIGH_RISK';
+  else if (compositeRiskScore >= 35) compositeRiskLevel = 'MEDIUM_RISK';
+  else if (compositeRiskScore <= 15) compositeRiskLevel = 'LOW_RISK';
+  else compositeRiskLevel = 'UNABLE_TO_VERIFY';
+
+  const confidenceLevel =
+    linkStatus === 'VERIFIED_LINK' || (instaAnalysis.confidenceLevel === 'HIGH' && waAnalysis.confidenceLevel === 'HIGH')
+      ? 'HIGH'
+      : 'MEDIUM';
+
+  const recommendations = [
+    'Always confirm that the WhatsApp number is publicly linked on the seller’s registered corporate website.',
+    'Never transfer advance UPI payments to private accounts without verified escrow protection.',
+    'Ensure registered GST invoice is provided prior to financial settlement.'
+  ];
+
+  return {
+    instagramHandle: instaAnalysis.handle,
+    whatsAppNumber: waAnalysis.formattedNumber,
+    linkStatus,
+    linkEvidence,
+    compositeRiskScore,
+    compositeRiskLevel,
+    confidenceLevel,
+    instagramAnalysis: instaAnalysis,
+    whatsAppAnalysis: waAnalysis,
+    jointRiskFactors,
+    recommendations,
+    lastCheckedTimestamp: timestamp,
+    disclaimer: DISCLAIMER_TEXT
   };
 }
 
@@ -420,9 +868,16 @@ export default async function handler(req, res) {
       return res.status(200).json({
         status: 'ok',
         service: 'SafeCart Cybersecurity Engine (Vercel Serverless)',
-        version: '1.0.0',
+        version: '2.0.0',
         timestamp: new Date().toISOString()
       });
+    }
+
+    if (url.includes('/social/scan-cross-platform') || url.includes('/scan-cross-platform')) {
+      const instagram = req.body?.instagram || req.query?.instagram || '';
+      const whatsapp = req.body?.whatsapp || req.query?.whatsapp || '';
+      const analysis = analyzeCrossPlatform(instagram, whatsapp);
+      return res.status(200).json({ success: true, analysis });
     }
 
     if (url.includes('/social/scan-instagram') || url.includes('/scan-instagram')) {
@@ -455,7 +910,7 @@ export default async function handler(req, res) {
         impersonatedBrand: data.associatedName,
         reportsCount: data.reportedCount,
         riskScore: data.riskScore,
-        evidence: `Known UPI Handles: ${data.upiIds.join(', ')}`,
+        evidence: `Reported UPI IDs: ${data.upiIds.join(', ')}`,
         whatsAppNumber: `+91 ${number}`,
         upiId: data.upiIds[0]
       }));

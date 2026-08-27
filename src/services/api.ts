@@ -10,11 +10,13 @@ import {
   WhatsAppAnalysisResult,
   SuspiciousMessageAnalysis,
   AudioTranscriptionResult,
-  VpaAnalysisResult
+  VpaAnalysisResult,
+  CrossPlatformAnalysisResult
 } from '../types';
 import {
   analyzeInstagramProfileClient,
   analyzeWhatsAppNumberClient,
+  analyzeCrossPlatformRiskClient,
   getRecentSocialThreatsClient
 } from './fallbackEngine';
 
@@ -455,6 +457,23 @@ export const api = {
     } catch {
       // Offline / Vercel static fallback
       const analysis = analyzeWhatsAppNumberClient(target);
+      return {
+        success: true,
+        analysis
+      };
+    }
+  },
+
+  scanCrossPlatform: async (instagram: string, whatsapp: string) => {
+    try {
+      const res = await apiClient.post<{
+        success: boolean;
+        analysis: CrossPlatformAnalysisResult;
+      }>('/social/scan-cross-platform', { instagram, whatsapp });
+      return res.data;
+    } catch {
+      // Offline / Vercel static fallback
+      const analysis = analyzeCrossPlatformRiskClient(instagram, whatsapp);
       return {
         success: true,
         analysis

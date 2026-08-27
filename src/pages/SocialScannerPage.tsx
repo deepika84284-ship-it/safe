@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { InstagramAnalysisResult, WhatsAppAnalysisResult } from '../types';
+import {
+  InstagramAnalysisResult,
+  WhatsAppAnalysisResult,
+  CrossPlatformAnalysisResult
+} from '../types';
 import {
   Shield,
   ShieldAlert,
@@ -10,7 +14,7 @@ import {
   AlertTriangle,
   Instagram,
   Phone,
-  ArrowRight,
+  Layers,
   ExternalLink,
   Search,
   CheckCircle2,
@@ -18,25 +22,25 @@ import {
   HelpCircle,
   Sparkles,
   RefreshCcw,
-  Zap,
-  Lock,
   QrCode,
-  DollarSign,
-  UserX,
-  MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Database,
+  Clock,
+  Info
 } from 'lucide-react';
 
 export const SocialScannerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { success, error } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'INSTAGRAM' | 'WHATSAPP'>('INSTAGRAM');
+  const [activeTab, setActiveTab] = useState<'INSTAGRAM' | 'WHATSAPP' | 'CROSS_PLATFORM'>('INSTAGRAM');
   const [query, setQuery] = useState('');
+  const [whatsappQuery, setWhatsappQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [instaResult, setInstaResult] = useState<InstagramAnalysisResult | null>(null);
   const [waResult, setWaResult] = useState<WhatsAppAnalysisResult | null>(null);
+  const [crossResult, setCrossResult] = useState<CrossPlatformAnalysisResult | null>(null);
 
   const [threats, setThreats] = useState<{
     instagramThreats: any[];
@@ -49,7 +53,7 @@ export const SocialScannerPage: React.FC = () => {
   // Report Modal State
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportForm, setReportForm] = useState({
-    platform: 'INSTAGRAM' as 'INSTAGRAM' | 'WHATSAPP',
+    platform: 'INSTAGRAM' as 'INSTAGRAM' | 'WHATSAPP' | 'CROSS_PLATFORM',
     identifier: '',
     whatsAppNumber: '',
     upiId: '',
@@ -65,7 +69,12 @@ export const SocialScannerPage: React.FC = () => {
     const handleParam = searchParams.get('handle') || searchParams.get('insta');
     const waParam = searchParams.get('phone') || searchParams.get('wa');
 
-    if (handleParam) {
+    if (handleParam && waParam) {
+      setActiveTab('CROSS_PLATFORM');
+      setQuery(handleParam);
+      setWhatsappQuery(waParam);
+      runCrossPlatformScan(handleParam, waParam);
+    } else if (handleParam) {
       setActiveTab('INSTAGRAM');
       setQuery(handleParam);
       runInstagramScan(handleParam);
@@ -89,11 +98,17 @@ export const SocialScannerPage: React.FC = () => {
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-
-    if (activeTab === 'INSTAGRAM') {
+    if (activeTab === 'CROSS_PLATFORM') {
+      if (!query.trim() || !whatsappQuery.trim()) {
+        error('Missing Input', 'Please provide both Instagram username and WhatsApp number.');
+        return;
+      }
+      await runCrossPlatformScan(query.trim(), whatsappQuery.trim());
+    } else if (activeTab === 'INSTAGRAM') {
+      if (!query.trim()) return;
       await runInstagramScan(query.trim());
     } else {
+      if (!query.trim()) return;
       await runWhatsAppScan(query.trim());
     }
   };
@@ -101,6 +116,7 @@ export const SocialScannerPage: React.FC = () => {
   const runInstagramScan = async (target: string) => {
     setLoading(true);
     setInstaResult(null);
+    setCrossResult(null);
     try {
       const res = await api.scanInstagram(target);
       if (res.success) {
@@ -117,14 +133,33 @@ export const SocialScannerPage: React.FC = () => {
   const runWhatsAppScan = async (target: string) => {
     setLoading(true);
     setWaResult(null);
+    setCrossResult(null);
     try {
       const res = await api.scanWhatsApp(target);
       if (res.success) {
         setWaResult(res.analysis);
-        success('WhatsApp Threat Audit Complete', `Scanned phone number: ${res.analysis.phoneNumber}`);
+        success('WhatsApp Threat Audit Complete', `Scanned phone number: ${res.analysis.formattedNumber}`);
       }
     } catch (err: any) {
       error('Scan Failed', err.response?.data?.message || 'Failed to scan WhatsApp number.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runCrossPlatformScan = async (instagram: string, whatsapp: string) => {
+    setLoading(true);
+    setInstaResult(null);
+    setWaResult(null);
+    setCrossResult(null);
+    try {
+      const res = await api.scanCrossPlatform(instagram, whatsapp);
+      if (res.success) {
+        setCrossResult(res.analysis);
+        success('Cross-Platform Correlation Complete', `Audited @${instagram} & ${whatsapp}`);
+      }
+    } catch (err: any) {
+      error('Scan Failed', err.response?.data?.message || 'Failed to perform cross-platform audit.');
     } finally {
       setLoading(false);
     }
@@ -161,7 +196,7 @@ export const SocialScannerPage: React.FC = () => {
       });
 
       if (res.success) {
-        success('Report Registered', 'Thank you! Threat added to community defense network.');
+        success('Report Registered', 'Thank you! Threat added to community threat registry.');
         setShowReportModal(false);
         setReportForm({
           platform: 'INSTAGRAM',
@@ -182,6 +217,51 @@ export const SocialScannerPage: React.FC = () => {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'LOW_RISK':
+      case 'LOW':
+        return {
+          bg: 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400',
+          dot: 'bg-emerald-400',
+          label: '🟢 Low Risk / Verified Authentic',
+          icon: <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        };
+      case 'MEDIUM_RISK':
+      case 'MEDIUM':
+        return {
+          bg: 'bg-yellow-950/80 border-yellow-500/40 text-yellow-400',
+          dot: 'bg-yellow-400',
+          label: '🟡 Medium Risk (Exercise Caution)',
+          icon: <AlertTriangle className="w-4 h-4 text-yellow-400" />
+        };
+      case 'HIGH_RISK':
+      case 'HIGH':
+        return {
+          bg: 'bg-orange-950/80 border-orange-500/40 text-orange-400',
+          dot: 'bg-orange-400',
+          label: '🟠 High Risk Store Pattern',
+          icon: <AlertCircle className="w-4 h-4 text-orange-400" />
+        };
+      case 'CONFIRMED_SCAM':
+      case 'VERY HIGH':
+        return {
+          bg: 'bg-red-950/80 border-red-500/40 text-red-400',
+          dot: 'bg-red-400',
+          label: '🔴 Confirmed Scam (Blacklisted)',
+          icon: <ShieldAlert className="w-4 h-4 text-red-400" />
+        };
+      case 'UNABLE_TO_VERIFY':
+      default:
+        return {
+          bg: 'bg-slate-900 border-slate-700 text-slate-300',
+          dot: 'bg-slate-400',
+          label: '⚪ Unable to Fully Verify (Unlisted)',
+          icon: <HelpCircle className="w-4 h-4 text-slate-400" />
+        };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-10">
@@ -190,52 +270,77 @@ export const SocialScannerPage: React.FC = () => {
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-emerald-950/80 border border-pink-500/30 text-[11px] font-black uppercase tracking-widest text-pink-300">
             <Sparkles className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-            Social Shopping & WhatsApp Fraud Shield
+            Social E-Commerce & WhatsApp Fraud Shield
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase">
             Instagram Fake Store & <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-emerald-400">
-              WhatsApp Scam Detector
+              WhatsApp Fraud Detector
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-slate-400 font-medium leading-relaxed">
-            Insta-ல chat பண்ணி WhatsApp-க்கு redirect பண்ணி advance UPI payment வாங்கிட்டு block பண்ற scam-களை உடனே கண்டுபுடிங்க. Verify if an Instagram handle or WhatsApp seller number is authentic or a dangerous trap.
+            Verify whether an Instagram storefront or WhatsApp seller contact is authentic, unverified, or a confirmed advance payment scam. Transparent OSINT threat intelligence with zero fake statistics.
           </p>
         </div>
 
         {/* Tab Switcher */}
         <div className="flex justify-center">
-          <div className="inline-flex p-1.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
+          <div className="inline-flex p-1.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl max-w-full overflow-x-auto">
             <button
               onClick={() => {
                 setActiveTab('INSTAGRAM');
                 setQuery('');
+                setInstaResult(null);
+                setWaResult(null);
+                setCrossResult(null);
               }}
-              className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition shrink-0 ${
                 activeTab === 'INSTAGRAM'
                   ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg shadow-pink-600/30'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
               <Instagram className="w-4 h-4" />
-              <span>Verify Instagram ID / Store</span>
+              <span>Verify Instagram Store</span>
             </button>
 
             <button
               onClick={() => {
                 setActiveTab('WHATSAPP');
                 setQuery('');
+                setInstaResult(null);
+                setWaResult(null);
+                setCrossResult(null);
               }}
-              className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition shrink-0 ${
                 activeTab === 'WHATSAPP'
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
               <Phone className="w-4 h-4" />
-              <span>Verify WhatsApp Number / UPI</span>
+              <span>Verify WhatsApp Number</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('CROSS_PLATFORM');
+                setQuery('');
+                setWhatsappQuery('');
+                setInstaResult(null);
+                setWaResult(null);
+                setCrossResult(null);
+              }}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition shrink-0 ${
+                activeTab === 'CROSS_PLATFORM'
+                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Cross-Platform (Insta + WA)</span>
             </button>
           </div>
         </div>
@@ -243,172 +348,178 @@ export const SocialScannerPage: React.FC = () => {
         {/* Search Scanner Input Box */}
         <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl max-w-3xl mx-auto">
           <form onSubmit={handleScan} className="space-y-4">
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-300">
-              {activeTab === 'INSTAGRAM'
-                ? 'Enter Instagram Username or Profile Link'
-                : 'Enter WhatsApp Phone Number or Contact Link'}
-            </label>
+            {activeTab === 'CROSS_PLATFORM' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1.5">
+                    1. Instagram Username / Store URL
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-400">
+                      <Instagram className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="e.g. @shop_deals or instagram.com/store"
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                    />
+                  </div>
+                </div>
 
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                {activeTab === 'INSTAGRAM' ? (
-                  <Instagram className="w-5 h-5 text-pink-400" />
-                ) : (
-                  <Phone className="w-5 h-5 text-emerald-400" />
-                )}
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1.5">
+                    2. WhatsApp Seller Phone Number
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={whatsappQuery}
+                      onChange={(e) => setWhatsappQuery(e.target.value)}
+                      placeholder="e.g. +91 98765 43210 or 9376635646"
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !query.trim() || !whatsappQuery.trim()}
+                  className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-wider text-white flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 shadow-xl shadow-indigo-600/30"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCcw className="w-4 h-4 animate-spin" />
+                      <span>Auditing Cross-Platform Linkage...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Layers className="w-4 h-4" />
+                      <span>Analyze Cross-Platform Identity Link</span>
+                    </>
+                  )}
+                </button>
               </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+                  {activeTab === 'INSTAGRAM'
+                    ? 'Enter Instagram Username or Profile Link'
+                    : 'Enter WhatsApp Phone Number or Contact Link'}
+                </label>
 
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={
-                  activeTab === 'INSTAGRAM'
-                    ? 'e.g. @nike_india_outlet_sale or instagram.com/brand_store'
-                    : 'e.g. +91 98765 43210, 9812345678 or wa.me/919876543210'
-                }
-                className="w-full pl-12 pr-32 py-4 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition"
-              />
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    {activeTab === 'INSTAGRAM' ? (
+                      <Instagram className="w-5 h-5 text-pink-400" />
+                    ) : (
+                      <Phone className="w-5 h-5 text-emerald-400" />
+                    )}
+                  </div>
 
-              <button
-                type="submit"
-                disabled={loading || !query.trim()}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white flex items-center gap-2 transition disabled:opacity-50 cursor-pointer ${
-                  activeTab === 'INSTAGRAM'
-                    ? 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 shadow-lg shadow-pink-600/30'
-                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/30'
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCcw className="w-4 h-4 animate-spin" />
-                    <span>Auditing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4" />
-                    <span>Analyze</span>
-                  </>
-                )}
-              </button>
-            </div>
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={
+                      activeTab === 'INSTAGRAM'
+                        ? 'e.g. @gifthampers65, @nike, @nike_india_outlet_sale'
+                        : 'e.g. +91 93766 35646, +91 79770 79770, +91 98765 43210'
+                    }
+                    className="w-full pl-12 pr-32 py-4 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={loading || !query.trim()}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white flex items-center gap-2 transition disabled:opacity-50 cursor-pointer ${
+                      activeTab === 'INSTAGRAM'
+                        ? 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 shadow-lg shadow-pink-600/30'
+                        : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/30'
+                    }`}
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCcw className="w-4 h-4 animate-spin" />
+                        <span>Auditing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4" />
+                        <span>Analyze</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Quick Test Chips */}
             <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-slate-400 font-bold uppercase text-[10px]">Test Known Cases:</span>
+              <span className="text-slate-400 font-bold uppercase text-[10px]">Test Benchmark Profiles:</span>
               {activeTab === 'INSTAGRAM' ? (
                 <>
                   <button
                     type="button"
-                    onClick={() => handleQuickTest('INSTAGRAM', '@nike_india_outlet_sale')}
-                    className="px-2.5 py-1 rounded-lg bg-pink-950/60 hover:bg-pink-900 border border-pink-500/30 text-pink-300 font-mono text-[11px] transition"
+                    onClick={() => handleQuickTest('INSTAGRAM', '@gifthampers65')}
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[11px] transition cursor-pointer"
                   >
-                    @nike_india_outlet_sale (Scam)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickTest('INSTAGRAM', '@iphone_deals_hub_india')}
-                    className="px-2.5 py-1 rounded-lg bg-pink-950/60 hover:bg-pink-900 border border-pink-500/30 text-pink-300 font-mono text-[11px] transition"
-                  >
-                    @iphone_deals_hub_india (Scam)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickTest('INSTAGRAM', '@zara_surplus_store_india')}
-                    className="px-2.5 py-1 rounded-lg bg-pink-950/60 hover:bg-pink-900 border border-pink-500/30 text-pink-300 font-mono text-[11px] transition"
-                  >
-                    @zara_surplus (Fake)
+                    @gifthampers65 (Unlisted)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickTest('INSTAGRAM', '@nike')}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition cursor-pointer"
                   >
-                    @nike (Official)
+                    @nike (Verified Brand)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickTest('INSTAGRAM', '@nike_india_outlet_sale')}
+                    className="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 font-mono text-[11px] transition cursor-pointer"
+                  >
+                    @nike_india_outlet_sale (Blacklisted)
                   </button>
                 </>
-              ) : (
+              ) : activeTab === 'WHATSAPP' ? (
                 <>
                   <button
                     type="button"
-                    onClick={() => handleQuickTest('WHATSAPP', '+91 98765 43210')}
-                    className="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 font-mono text-[11px] transition"
+                    onClick={() => handleQuickTest('WHATSAPP', '+91 93766 35646')}
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[11px] transition cursor-pointer"
                   >
-                    +91 98765 43210 (Blacklisted)
+                    +91 93766 35646 (Unlisted)
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleQuickTest('WHATSAPP', '+91 97000 11222')}
-                    className="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 font-mono text-[11px] transition"
+                    onClick={() => handleQuickTest('WHATSAPP', '+91 79770 79770')}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition cursor-pointer"
                   >
-                    +91 97000 11222 (iPhone Scam)
+                    +91 79770 79770 (JioMart Verified)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickTest('WHATSAPP', '+91 98765 43210')}
+                    className="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 font-mono text-[11px] transition cursor-pointer"
+                  >
+                    +91 98765 43210 (Blacklisted)
                   </button>
                 </>
-              )}
+              ) : null}
             </div>
           </form>
         </div>
 
-        {/* --- SCAM LIFECYCLE INFOGRAPHIC BANNER --- */}
-        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800">
-          <div className="text-center mb-6">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-500/30">
-              Anatomy of the Instagram-to-WhatsApp Scam (எப்படி ஏமாத்துறாங்க?)
-            </span>
-            <h3 className="text-lg font-black text-white mt-2 uppercase tracking-wide">
-              How the Social Shopping UPI Trap Works
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 relative">
-              <div className="w-8 h-8 rounded-xl bg-pink-950 border border-pink-500/30 flex items-center justify-center text-pink-400 font-black text-xs">
-                1
-              </div>
-              <h4 className="text-xs font-black uppercase tracking-wide text-white">
-                Fake Instagram Ad / Bio
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Offers 85-90% discount on iPhones, branded sneakers, or luxury sarees. Directs users: <em>"DM for Price or Click WhatsApp Link in Bio"</em>.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 relative">
-              <div className="w-8 h-8 rounded-xl bg-amber-950 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-xs">
-                2
-              </div>
-              <h4 className="text-xs font-black uppercase tracking-wide text-white">
-                Forced WhatsApp Chat (wa.me)
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Bypasses Instagram/E-commerce buyer protection by taking communication private. Disables comments on Instagram to hide complaints.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 relative">
-              <div className="w-8 h-8 rounded-xl bg-red-950 border border-red-500/30 flex items-center justify-center text-red-400 font-black text-xs">
-                3
-              </div>
-              <h4 className="text-xs font-black uppercase tracking-wide text-white">
-                Advance UPI / QR Code Demand
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Demands advance payment via GPay / PhonePe / Paytm or ₹300-₹500 "courier booking fee" even for alleged COD orders.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 relative">
-              <div className="w-8 h-8 rounded-xl bg-purple-950 border border-purple-500/30 flex items-center justify-center text-purple-400 font-black text-xs">
-                4
-              </div>
-              <h4 className="text-xs font-black uppercase tracking-wide text-white">
-                Fake Tracking Slip & Block
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Sends a fake DTDC/Delhivery tracking screenshot, asks for "customs clearance money", then immediately blocks the victim on WhatsApp and Insta.
-              </p>
-            </div>
-          </div>
+        {/* --- LEGAL & HEURISTIC DISCLAIMER BANNER --- */}
+        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex items-start gap-3 text-xs text-slate-400">
+          <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+          <p>
+            <strong>SafeCart Trust & Safety Notice:</strong> SafeCart provides risk indicators based on verifiable threat blacklist data, verified corporate registries, and transparent linguistic pattern heuristics. It does not access private social media accounts or guarantee that an entity is legitimate or fraudulent.
+          </p>
         </div>
 
         {/* --- RESULTS SECTION --- */}
@@ -419,20 +530,8 @@ export const SocialScannerPage: React.FC = () => {
             {/* Header Badge */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
               <div className="flex items-center gap-4">
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-                    instaResult.authenticityStatus === 'LIKELY_AUTHENTIC'
-                      ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
-                      : instaResult.authenticityStatus === 'CONFIRMED_SCAM'
-                      ? 'bg-red-950 border border-red-500/40 text-red-400'
-                      : 'bg-amber-950 border border-amber-500/40 text-amber-400'
-                  }`}
-                >
-                  {instaResult.authenticityStatus === 'LIKELY_AUTHENTIC' ? (
-                    <ShieldCheck className="w-8 h-8" />
-                  ) : (
-                    <ShieldAlert className="w-8 h-8" />
-                  )}
+                <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                  {getStatusBadge(instaResult.authenticityStatus).icon}
                 </div>
 
                 <div>
@@ -462,115 +561,65 @@ export const SocialScannerPage: React.FC = () => {
               <div className="text-right">
                 <div
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider border ${
-                    instaResult.authenticityStatus === 'LIKELY_AUTHENTIC'
-                      ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400'
-                      : instaResult.authenticityStatus === 'CONFIRMED_SCAM'
-                      ? 'bg-red-950/80 border-red-500/40 text-red-400'
-                      : 'bg-amber-950/80 border-amber-500/40 text-amber-400'
+                    getStatusBadge(instaResult.authenticityStatus).bg
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                  <span>
-                    {instaResult.authenticityStatus === 'LIKELY_AUTHENTIC'
-                      ? 'Verified Authentic Account'
-                      : instaResult.authenticityStatus === 'CONFIRMED_SCAM'
-                      ? 'CONFIRMED FAKE SCAM STORE'
-                      : 'HIGH SUSPICION / CAUTION'}
-                  </span>
+                  <span className={`w-2 h-2 rounded-full ${getStatusBadge(instaResult.authenticityStatus).dot} animate-pulse`} />
+                  <span>{getStatusBadge(instaResult.authenticityStatus).label}</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 font-mono">
-                  Threat Risk Score: <strong className="text-white">{instaResult.riskScore}/100</strong>
+                  Threat Risk Score: <strong className="text-white">{instaResult.riskScore}/100</strong> • Confidence: <strong className="text-slate-300">{instaResult.confidenceLevel}</strong>
                 </div>
               </div>
             </div>
 
-            {/* Redirection Alert Banner */}
-            {instaResult.redirectionAnalysis.redirectsToWhatsApp && (
-              <div className="p-5 rounded-2xl bg-red-950/50 border border-red-500/40 flex items-start gap-4">
-                <AlertTriangle className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <h4 className="text-sm font-black uppercase tracking-wide text-red-300">
-                    High-Risk WhatsApp Redirection Detected (வாட்ஸ்அப் மோசடி எச்சரிக்கை)
-                  </h4>
-                  <p className="text-xs text-red-200/90 leading-relaxed">
-                    {instaResult.redirectionAnalysis.warningNote}
-                  </p>
-                  {instaResult.whatsAppNumberDetected && (
-                    <div className="mt-2 text-xs font-mono text-red-300">
-                      Associated WhatsApp Contact: <strong>{instaResult.whatsAppNumberDetected}</strong>
+            {/* Evidence & Status Overview Card */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5 text-blue-400" />
+                <span>Verification Verdict & Evidence Overview</span>
+              </span>
+              <p className="text-sm font-semibold text-slate-200">
+                {instaResult.verificationStatus}
+              </p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {instaResult.evidenceSummary}
+              </p>
+            </div>
+
+            {/* Data Sources Checked Grid */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Database className="w-4 h-4 text-slate-400" />
+                <span>Verification Data Sources Audited</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {instaResult.dataSourcesChecked.map((ds, idx) => (
+                  <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-200">{ds.name}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                          ds.status === 'CHECKED_CLEAN'
+                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                            : ds.status === 'FLAGGED'
+                            ? 'bg-red-950 text-red-400 border border-red-500/30'
+                            : 'bg-slate-900 text-slate-400 border border-slate-800'
+                        }`}
+                      >
+                        {ds.status.replace('_', ' ')}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Metrics Breakdown Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Comments Status</span>
-                <div className="flex items-center gap-1.5 text-xs font-bold">
-                  {instaResult.isCommentsDisabledOrFiltered ? (
-                    <>
-                      <XCircle className="w-4 h-4 text-red-400" />
-                      <span className="text-red-400">Disabled / Blocked</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400">Open Public</span>
-                    </>
-                  )}
-                </div>
-                <p className="text-[10px] text-slate-400">
-                  {instaResult.isCommentsDisabledOrFiltered ? 'Turns off comments to prevent victims posting warnings.' : 'Legit review transparency.'}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Estimated Followers</span>
-                <div className="text-sm font-black text-white font-mono">
-                  {instaResult.followerCountEstimate.toLocaleString()}
-                </div>
-                <p className="text-[10px] text-slate-400">
-                  Engagement: <strong className="text-slate-300">{instaResult.engagementRatioPercent}%</strong> {instaResult.engagementRatioPercent < 0.2 ? '(Bot Anomaly)' : ''}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Username History</span>
-                <div className="flex items-center gap-1.5 text-xs font-bold">
-                  {instaResult.hasFrequentUsernameChanges ? (
-                    <>
-                      <AlertCircle className="w-4 h-4 text-amber-400" />
-                      <span className="text-amber-400">{instaResult.usernameChangesCount} Changes Detected</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400">Stable Identity</span>
-                    </>
-                  )}
-                </div>
-                <p className="text-[10px] text-slate-400">Account Age: {instaResult.accountAgeEstimated}</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Scam Reports in Registry</span>
-                <div className="text-sm font-black font-mono">
-                  {instaResult.reportedScamCount > 0 ? (
-                    <span className="text-red-400">{instaResult.reportedScamCount} Victim Reports</span>
-                  ) : (
-                    <span className="text-emerald-400">0 Reports</span>
-                  )}
-                </div>
-                <p className="text-[10px] text-slate-400">SafeCart Community Intel</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{ds.details}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Detected Risk Signals */}
             <div className="space-y-3">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">
-                Detailed Threat Analysis & Detected Signals
+                Detected Fraud & Risk Signals Breakdown
               </h3>
               <div className="space-y-2">
                 {instaResult.riskSignals.map((sig, idx) => (
@@ -583,7 +632,7 @@ export const SocialScannerPage: React.FC = () => {
                         {sig.severity === 'CRITICAL' || sig.severity === 'HIGH' ? (
                           <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
                         ) : sig.severity === 'MEDIUM' ? (
-                          <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                          <HelpCircle className="w-4 h-4 text-yellow-400 shrink-0" />
                         ) : (
                           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         )}
@@ -592,17 +641,24 @@ export const SocialScannerPage: React.FC = () => {
                       <p className="text-slate-400">{sig.description}</p>
                     </div>
 
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider shrink-0 ${
-                        sig.severity === 'CRITICAL'
-                          ? 'bg-red-950 text-red-400 border border-red-500/30'
-                          : sig.severity === 'HIGH'
-                          ? 'bg-amber-950 text-amber-400 border border-amber-500/30'
-                          : 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
-                      }`}
-                    >
-                      {sig.severity}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                          sig.severity === 'CRITICAL'
+                            ? 'bg-red-950 text-red-400 border border-red-500/30'
+                            : sig.severity === 'HIGH'
+                            ? 'bg-orange-950 text-orange-400 border border-orange-500/30'
+                            : sig.severity === 'MEDIUM'
+                            ? 'bg-yellow-950 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                        }`}
+                      >
+                        {sig.severity}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-mono uppercase tracking-wider">
+                        {sig.evidenceType.replace('_', ' ')}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -612,7 +668,7 @@ export const SocialScannerPage: React.FC = () => {
             <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
                 <Shield className="w-4 h-4" />
-                <span>Protective Recommendations for Buyers</span>
+                <span>Protective Recommendations for Online Buyers</span>
               </h4>
               <ul className="space-y-2 text-xs text-slate-300">
                 {instaResult.recommendations.map((rec, idx) => (
@@ -624,22 +680,27 @@ export const SocialScannerPage: React.FC = () => {
               </ul>
             </div>
 
-            {/* Quick Report CTA */}
-            <div className="flex justify-end pt-2">
+            {/* Footer metadata & Report CTA */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-slate-800 text-[11px] text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Last Audited: {new Date(instaResult.lastCheckedTimestamp).toLocaleString()}</span>
+              </div>
+
               <button
                 onClick={() => {
                   setReportForm({
                     ...reportForm,
                     platform: 'INSTAGRAM',
                     identifier: instaResult.handle,
-                    whatsAppNumber: instaResult.whatsAppNumberDetected || ''
+                    whatsAppNumber: ''
                   });
                   setShowReportModal(true);
                 }}
-                className="px-4 py-2 rounded-xl bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition cursor-pointer"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Report this Instagram Account as Scam</span>
+                <span>Report this Account</span>
               </button>
             </div>
           </div>
@@ -650,21 +711,15 @@ export const SocialScannerPage: React.FC = () => {
           <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-8 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
               <div className="flex items-center gap-4">
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-                    waResult.riskLevel === 'LOW'
-                      ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
-                      : 'bg-red-950 border border-red-500/40 text-red-400'
-                  }`}
-                >
-                  <Phone className="w-8 h-8" />
+                <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                  {getStatusBadge(waResult.riskLevel).icon}
                 </div>
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-white font-mono">
                     {waResult.formattedNumber}
                   </h2>
                   <div className="text-xs text-slate-400">
-                    Business / Alias: <strong className="text-slate-200">{waResult.associatedBusinessName}</strong> • {waResult.country}
+                    Business / Channel: <strong className="text-slate-200">{waResult.associatedBusinessName}</strong> • {waResult.telecomCircle || waResult.country}
                   </div>
                 </div>
               </div>
@@ -672,18 +727,30 @@ export const SocialScannerPage: React.FC = () => {
               <div className="text-right">
                 <div
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider border ${
-                    waResult.riskLevel === 'LOW'
-                      ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400'
-                      : 'bg-red-950/80 border-red-500/40 text-red-400'
+                    getStatusBadge(waResult.riskLevel).bg
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                  <span>{waResult.riskLevel === 'LOW' ? 'Unreported Phone' : 'CONFIRMED FRAUD NUMBER'}</span>
+                  <span className={`w-2 h-2 rounded-full ${getStatusBadge(waResult.riskLevel).dot} animate-pulse`} />
+                  <span>{getStatusBadge(waResult.riskLevel).label}</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 font-mono">
-                  Victim Reports: <strong className="text-red-400">{waResult.reportedScamCount}</strong>
+                  Threat Risk Score: <strong className="text-white">{waResult.riskScore}/100</strong> • Confidence: <strong className="text-slate-300">{waResult.confidenceLevel}</strong>
                 </div>
               </div>
+            </div>
+
+            {/* Evidence & Status Overview Card */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5 text-blue-400" />
+                <span>Verification Verdict & Registry Status</span>
+              </span>
+              <p className="text-sm font-semibold text-slate-200">
+                {waResult.verificationStatus}
+              </p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {waResult.evidenceSummary}
+              </p>
             </div>
 
             {/* Reported UPI Handles */}
@@ -691,7 +758,7 @@ export const SocialScannerPage: React.FC = () => {
               <div className="p-4 rounded-2xl bg-red-950/60 border border-red-500/40 space-y-2">
                 <span className="text-xs font-black uppercase tracking-wider text-red-300 flex items-center gap-2">
                   <QrCode className="w-4 h-4" />
-                  <span>Reported Malicious UPI IDs / Payment Handles:</span>
+                  <span>Blacklisted Malicious UPI IDs / Payment Handles:</span>
                 </span>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {waResult.reportedUpiIds.map((upi, i) => (
@@ -706,11 +773,40 @@ export const SocialScannerPage: React.FC = () => {
               </div>
             )}
 
-            {/* Checklist */}
+            {/* Data Sources Checked Grid */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Database className="w-4 h-4 text-slate-400" />
+                <span>Verification Data Sources Audited</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {waResult.dataSourcesChecked.map((ds, idx) => (
+                  <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-200">{ds.name}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                          ds.status === 'CHECKED_CLEAN'
+                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                            : ds.status === 'FLAGGED'
+                            ? 'bg-red-950 text-red-400 border border-red-500/30'
+                            : 'bg-slate-900 text-slate-400 border border-slate-800'
+                        }`}
+                      >
+                        {ds.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{ds.details}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Safety Checklist */}
             <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
-                <span>WhatsApp Shopping Defense Rules</span>
+                <span>WhatsApp Commerce Safety Checklist</span>
               </h4>
               <ul className="space-y-2 text-xs text-slate-300">
                 {waResult.safetyChecklist.map((tip, idx) => (
@@ -722,7 +818,12 @@ export const SocialScannerPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-slate-800 text-[11px] text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Last Audited: {new Date(waResult.lastCheckedTimestamp).toLocaleString()}</span>
+              </div>
+
               <button
                 onClick={() => {
                   setReportForm({
@@ -734,11 +835,121 @@ export const SocialScannerPage: React.FC = () => {
                   });
                   setShowReportModal(true);
                 }}
-                className="px-4 py-2 rounded-xl bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition cursor-pointer"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Report this WhatsApp Number</span>
+                <span>Report this Number</span>
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* CROSS-PLATFORM RESULT */}
+        {crossResult && (
+          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-8 animate-in fade-in duration-300">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                  <Layers className="w-8 h-8 text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-white font-mono flex items-center gap-2">
+                    <span>@{crossResult.instagramHandle}</span>
+                    <span className="text-slate-500 font-sans text-sm">+</span>
+                    <span>{crossResult.whatsAppNumber}</span>
+                  </h2>
+                  <div className="text-xs text-slate-400">
+                    Identity Link Status: <strong className="text-indigo-300">{crossResult.linkStatus.replace('_', ' ')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider border ${
+                    getStatusBadge(crossResult.compositeRiskLevel).bg
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${getStatusBadge(crossResult.compositeRiskLevel).dot} animate-pulse`} />
+                  <span>{getStatusBadge(crossResult.compositeRiskLevel).label}</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 font-mono">
+                  Composite Risk: <strong className="text-white">{crossResult.compositeRiskScore}/100</strong> • Confidence: <strong className="text-slate-300">{crossResult.confidenceLevel}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Link Evidence Banner */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Cross-Platform Correlation Evidence</span>
+              </span>
+              <p className="text-sm font-semibold text-slate-200">
+                {crossResult.linkEvidence}
+              </p>
+            </div>
+
+            {/* Joint Risk Factors */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">
+                Correlated Risk Factors
+              </h3>
+              <div className="space-y-2">
+                {crossResult.jointRiskFactors.map((factor, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center gap-2 text-xs text-slate-300">
+                    <AlertCircle className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <span>{factor}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Individual Channel Mini Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-pink-400 flex items-center gap-1.5">
+                    <Instagram className="w-4 h-4" />
+                    <span>Instagram Profile Status</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-white">
+                    Score: {crossResult.instagramAnalysis.riskScore}/100
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">{crossResult.instagramAnalysis.verificationStatus}</p>
+                <p className="text-[11px] text-slate-400">{crossResult.instagramAnalysis.evidenceSummary}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                    <Phone className="w-4 h-4" />
+                    <span>WhatsApp Channel Status</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-white">
+                    Score: {crossResult.whatsAppAnalysis.riskScore}/100
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">{crossResult.whatsAppAnalysis.verificationStatus}</p>
+                <p className="text-[11px] text-slate-400">{crossResult.whatsAppAnalysis.evidenceSummary}</p>
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                <span>Cross-Platform Safety Recommendations</span>
+              </h4>
+              <ul className="space-y-2 text-xs text-slate-300">
+                {crossResult.recommendations.map((rec, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                    <span>{rec}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
@@ -749,184 +960,188 @@ export const SocialScannerPage: React.FC = () => {
             <div>
               <h2 className="text-xl font-black uppercase tracking-wide text-white flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-red-400" />
-                <span>Recently Reported Social Shopping Scams</span>
+                <span>Verified Threat Intelligence Registry</span>
               </h2>
-              <p className="text-xs text-slate-400">
-                Live threat intel submitted by users across Instagram and WhatsApp
+              <p className="text-xs text-slate-400 mt-0.5">
+                Active scam operations identified and blacklisted by SafeCart community reports
               </p>
             </div>
 
             <button
-              onClick={() => setShowReportModal(true)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white text-xs font-black uppercase tracking-wider transition shadow-lg shadow-red-600/20 cursor-pointer"
+              onClick={() => {
+                setReportForm({
+                  platform: 'INSTAGRAM',
+                  identifier: '',
+                  whatsAppNumber: '',
+                  upiId: '',
+                  financialLossAmount: '',
+                  evidenceText: '',
+                  reporterName: '',
+                  reporterEmail: ''
+                });
+                setShowReportModal(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer"
             >
-              + Report New Scam
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Submit Scam Report</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {threats.instagramThreats.map((t, idx) => (
+            {threats.instagramThreats.map((threat, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-pink-500/40 transition space-y-3"
+                className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 hover:border-red-500/40 transition"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Instagram className="w-4 h-4 text-pink-400" />
-                    <span className="font-mono font-bold text-white text-sm">{t.identifier}</span>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-pink-950 border border-pink-500/30 text-pink-400">
+                      <Instagram className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black font-mono text-white">{threat.identifier}</h4>
+                      <span className="text-[11px] text-red-400 font-bold">Impersonating: {threat.impersonatedBrand}</span>
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-red-950 border border-red-500/30 text-red-400 font-mono text-[10px] font-black uppercase">
-                    Risk {t.riskScore}/100
+                  <span className="px-2.5 py-1 rounded-lg bg-red-950 text-red-400 border border-red-500/30 text-[10px] font-black uppercase tracking-wider">
+                    {threat.reportsCount} Reports
                   </span>
                 </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed">{t.evidence}</p>
-
-                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-[11px] text-slate-400 font-mono gap-2">
-                  <span>Impersonates: <strong className="text-slate-200">{t.impersonatedBrand}</strong></span>
-                  <span>Reports: <strong className="text-red-400">{t.reportsCount}</strong></span>
-                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">{threat.evidence}</p>
+                {threat.whatsAppNumber && (
+                  <div className="text-[11px] font-mono text-slate-500 pt-1 border-t border-slate-800">
+                    Linked WhatsApp: <strong className="text-slate-300">{threat.whatsAppNumber}</strong>
+                  </div>
+                )}
               </div>
             ))}
 
-            {threats.whatsAppThreats.map((t, idx) => (
+            {threats.whatsAppThreats.map((threat, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition space-y-3"
+                className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 hover:border-red-500/40 transition"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-emerald-400" />
-                    <span className="font-mono font-bold text-white text-sm">{t.identifier}</span>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-950 border border-emerald-500/30 text-emerald-400">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black font-mono text-white">{threat.identifier}</h4>
+                      <span className="text-[11px] text-red-400 font-bold">{threat.impersonatedBrand}</span>
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-red-950 border border-red-500/30 text-red-400 font-mono text-[10px] font-black uppercase">
-                    Risk {t.riskScore}/100
+                  <span className="px-2.5 py-1 rounded-lg bg-red-950 text-red-400 border border-red-500/30 text-[10px] font-black uppercase tracking-wider">
+                    {threat.reportsCount} Reports
                   </span>
                 </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed">{t.evidence}</p>
-
-                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-[11px] text-slate-400 font-mono gap-2">
-                  <span>Alias: <strong className="text-slate-200">{t.impersonatedBrand}</strong></span>
-                  <span>Reports: <strong className="text-red-400">{t.reportsCount}</strong></span>
-                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">{threat.evidence}</p>
               </div>
             ))}
           </div>
         </div>
-
       </div>
 
       {/* --- REPORT SCAM MODAL --- */}
       {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h3 className="text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-400" />
-                <h3 className="text-base font-black uppercase tracking-wide text-white">
-                  Report Social Media / WhatsApp Scam
-                </h3>
-              </div>
+                <span>Submit Social / WhatsApp Scam</span>
+              </h3>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
               >
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitSocialReport} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setReportForm({ ...reportForm, platform: 'INSTAGRAM' })}
-                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                    reportForm.platform === 'INSTAGRAM'
-                      ? 'bg-pink-950 border-pink-500 text-pink-300'
-                      : 'bg-slate-950 border-slate-800 text-slate-400'
-                  }`}
+            <form onSubmit={handleSubmitSocialReport} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-bold uppercase tracking-wider text-[10px] mb-1">
+                  Platform
+                </label>
+                <select
+                  value={reportForm.platform}
+                  onChange={(e: any) => setReportForm({ ...reportForm, platform: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-red-500"
                 >
-                  Instagram Scam
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReportForm({ ...reportForm, platform: 'WHATSAPP' })}
-                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
-                    reportForm.platform === 'WHATSAPP'
-                      ? 'bg-emerald-950 border-emerald-500 text-emerald-300'
-                      : 'bg-slate-950 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  WhatsApp Scam
-                </button>
+                  <option value="INSTAGRAM">Instagram Storefront</option>
+                  <option value="WHATSAPP">WhatsApp Number</option>
+                  <option value="CROSS_PLATFORM">Cross-Platform (Instagram + WhatsApp)</option>
+                </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">
-                  {reportForm.platform === 'INSTAGRAM' ? 'Instagram Handle (@name)' : 'WhatsApp Phone Number'}
+                <label className="block text-slate-300 font-bold uppercase tracking-wider text-[10px] mb-1">
+                  Account Handle / Phone Number *
                 </label>
                 <input
                   type="text"
+                  required
+                  placeholder="@seller_id or +91 98765 43210"
                   value={reportForm.identifier}
                   onChange={(e) => setReportForm({ ...reportForm, identifier: e.target.value })}
-                  placeholder={reportForm.platform === 'INSTAGRAM' ? '@fake_deals_store' : '+91 98765 43210'}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white focus:outline-none focus:border-pink-500"
-                  required
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-red-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">
-                    WhatsApp Number (if redirected)
+                  <label className="block text-slate-300 font-bold uppercase tracking-wider text-[10px] mb-1">
+                    WhatsApp Number (if any)
                   </label>
                   <input
                     type="text"
+                    placeholder="+91..."
                     value={reportForm.whatsAppNumber}
                     onChange={(e) => setReportForm({ ...reportForm, whatsAppNumber: e.target.value })}
-                    placeholder="+91 98XXX XXXXX"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white focus:outline-none focus:border-pink-500"
+                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-red-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">
-                    Scammer's UPI ID / GPay
+                  <label className="block text-slate-300 font-bold uppercase tracking-wider text-[10px] mb-1">
+                    Scammer UPI ID (if any)
                   </label>
                   <input
                     type="text"
+                    placeholder="name@okaxis"
                     value={reportForm.upiId}
                     onChange={(e) => setReportForm({ ...reportForm, upiId: e.target.value })}
-                    placeholder="scamstore@ybl"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white focus:outline-none focus:border-pink-500"
+                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-red-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">
-                  Financial Loss Amount (₹)
+                <label className="block text-slate-300 font-bold uppercase tracking-wider text-[10px] mb-1">
+                  Financial Loss Amount (₹ INR optional)
                 </label>
                 <input
                   type="number"
+                  placeholder="e.g. 1499"
                   value={reportForm.financialLossAmount}
                   onChange={(e) => setReportForm({ ...reportForm, financialLossAmount: e.target.value })}
-                  placeholder="e.g. 1499"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white focus:outline-none focus:border-pink-500"
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">
-                  What Happened? (Evidence & Chat details)
+                <label className="block text-slate-300 font-bold uppercase tracking-wider text-[10px] mb-1">
+                  Incident Evidence Description *
                 </label>
                 <textarea
+                  required
                   rows={3}
+                  placeholder="Explain the incident (e.g. asked for advance UPI on WhatsApp, sent fake DTDC tracking, then blocked)..."
                   value={reportForm.evidenceText}
                   onChange={(e) => setReportForm({ ...reportForm, evidenceText: e.target.value })}
-                  placeholder="e.g. Ordered shoes from Insta, they asked to WhatsApp +91..., paid via GPay, then they sent fake courier tracking and blocked me."
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-pink-500"
-                  required
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
                 />
               </div>
 
@@ -934,16 +1149,16 @@ export const SocialScannerPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowReportModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase"
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold uppercase text-[10px] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingReport}
-                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-wider transition disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold uppercase text-[10px] transition cursor-pointer disabled:opacity-50"
                 >
-                  {submittingReport ? 'Submitting...' : 'Submit Scam Report'}
+                  {submittingReport ? 'Registering...' : 'Submit Threat Report'}
                 </button>
               </div>
             </form>

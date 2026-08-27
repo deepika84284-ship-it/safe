@@ -194,31 +194,33 @@ export interface SafetyTip {
   readTime: string;
 }
 
+export interface DataSourceCheck {
+  name: string;
+  status: 'CHECKED_CLEAN' | 'FLAGGED' | 'UNAVAILABLE' | 'NOT_APPLICABLE';
+  details: string;
+}
+
+export interface RiskSignalItem {
+  title: string;
+  description: string;
+  severity: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  points: number;
+  evidenceType: 'VERIFIED_RECORD' | 'HEURISTIC_INDICATOR' | 'PRECAUTIONARY';
+}
+
 export interface InstagramAnalysisResult {
   handle: string;
   fullUrl: string;
-  authenticityStatus: 'LIKELY_AUTHENTIC' | 'SUSPICIOUS' | 'CONFIRMED_SCAM' | 'HIGH_RISK';
-  riskScore: number; // 0 - 100 (100 = critical risk)
+  authenticityStatus: 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK' | 'CONFIRMED_SCAM' | 'UNABLE_TO_VERIFY';
+  riskScore: number;
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  verificationStatus: string;
   isVerifiedBadge: boolean;
-  followerCountEstimate: number;
-  followingCountEstimate: number;
-  postsCountEstimate: number;
-  engagementRatioPercent: number; // e.g. 0.05% vs normal 1.5%
-  isCommentsDisabledOrFiltered: boolean;
-  hasWhatsAppLinkInBio: boolean;
-  whatsAppNumberDetected?: string;
-  hasUpiQrPaymentLure: boolean;
-  hasFrequentUsernameChanges: boolean;
-  usernameChangesCount: number;
-  accountAgeEstimated: string;
   officialBrandImpersonated?: string;
   reportedScamCount: number;
-  riskSignals: Array<{
-    title: string;
-    description: string;
-    severity: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    points: number;
-  }>;
+  evidenceSummary: string;
+  dataSourcesChecked: DataSourceCheck[];
+  riskSignals: RiskSignalItem[];
   redirectionAnalysis: {
     redirectsToWhatsApp: boolean;
     redirectUrl?: string;
@@ -226,6 +228,8 @@ export interface InstagramAnalysisResult {
     warningNote: string;
   };
   recommendations: string[];
+  lastCheckedTimestamp: string;
+  disclaimer: string;
 }
 
 export interface WhatsAppAnalysisResult {
@@ -233,24 +237,43 @@ export interface WhatsAppAnalysisResult {
   formattedNumber: string;
   country: string;
   countryCode: string;
+  telecomCircle?: string;
   isVirtualOrVoip: boolean;
-  associatedBusinessName?: string;
+  associatedBusinessName: string;
+  verificationStatus: string;
   reportedScamCount: number;
   reportedUpiIds: string[];
-  riskLevel: RiskLevel;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY HIGH' | 'UNABLE_TO_VERIFY';
   riskScore: number;
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  evidenceSummary: string;
+  dataSourcesChecked: DataSourceCheck[];
   knownFraudSchemes: string[];
-  riskSignals: Array<{
-    title: string;
-    description: string;
-    severity: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  }>;
+  riskSignals: RiskSignalItem[];
   safetyChecklist: string[];
+  lastCheckedTimestamp: string;
+  disclaimer: string;
+}
+
+export interface CrossPlatformAnalysisResult {
+  instagramHandle: string;
+  whatsAppNumber: string;
+  linkStatus: 'VERIFIED_LINK' | 'POSSIBLE_LINK' | 'UNVERIFIED_INDEPENDENT';
+  linkEvidence: string;
+  compositeRiskScore: number;
+  compositeRiskLevel: 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK' | 'CONFIRMED_SCAM' | 'UNABLE_TO_VERIFY';
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  instagramAnalysis: InstagramAnalysisResult;
+  whatsAppAnalysis: WhatsAppAnalysisResult;
+  jointRiskFactors: string[];
+  recommendations: string[];
+  lastCheckedTimestamp: string;
+  disclaimer: string;
 }
 
 export interface SocialScamReport {
   id: string;
-  platform: 'INSTAGRAM' | 'WHATSAPP' | 'TELEGRAM' | 'OTHER';
+  platform: 'INSTAGRAM' | 'WHATSAPP' | 'TELEGRAM' | 'CROSS_PLATFORM' | 'OTHER';
   instagramHandle?: string;
   whatsAppNumber?: string;
   upiId?: string;

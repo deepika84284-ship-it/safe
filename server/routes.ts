@@ -22,6 +22,7 @@ import { getSafetyTips } from './controllers/safetyController';
 import {
   scanInstagramProfile,
   scanWhatsAppNumber,
+  scanCrossPlatform,
   getSocialThreats,
   reportSocialScam
 } from './controllers/socialController';
@@ -98,6 +99,7 @@ apiRouter.post('/ai/transcribe-voice', transcribeScamVoice);
 // Social & WhatsApp Scam Scanner Routes
 apiRouter.post('/social/scan-instagram', scanLimiter, scanInstagramProfile);
 apiRouter.post('/social/scan-whatsapp', scanLimiter, scanWhatsAppNumber);
+apiRouter.post('/social/scan-cross-platform', scanLimiter, scanCrossPlatform);
 apiRouter.get('/social/threats', getSocialThreats);
 apiRouter.post('/social/report', optionalAuth, reportSocialScam);
 
