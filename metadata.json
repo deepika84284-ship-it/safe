@@ -1,0 +1,6 @@
+{
+  "name": "SafeCart - E-Commerce Fraud Detection & Safety Platform",
+  "description": "Scan online shopping websites, analyze risk indicators, review community trust reports, verify UPI IDs, and protect payments via Google Pay (GPay) Escrow Shield.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
