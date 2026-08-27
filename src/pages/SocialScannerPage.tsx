@@ -219,12 +219,19 @@ export const SocialScannerPage: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'VERIFIED_SAFE':
+        return {
+          bg: 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400',
+          dot: 'bg-emerald-400',
+          label: '🟢 VERIFIED SAFE (Official Brand)',
+          icon: <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        };
       case 'LOW_RISK':
       case 'LOW':
         return {
           bg: 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400',
           dot: 'bg-emerald-400',
-          label: '🟢 Low Risk / Verified Authentic',
+          label: '🟢 LOW RISK',
           icon: <ShieldCheck className="w-4 h-4 text-emerald-400" />
         };
       case 'MEDIUM_RISK':
@@ -232,7 +239,7 @@ export const SocialScannerPage: React.FC = () => {
         return {
           bg: 'bg-yellow-950/80 border-yellow-500/40 text-yellow-400',
           dot: 'bg-yellow-400',
-          label: '🟡 Medium Risk (Exercise Caution)',
+          label: '🟡 MEDIUM RISK (Caution)',
           icon: <AlertTriangle className="w-4 h-4 text-yellow-400" />
         };
       case 'HIGH_RISK':
@@ -240,15 +247,16 @@ export const SocialScannerPage: React.FC = () => {
         return {
           bg: 'bg-orange-950/80 border-orange-500/40 text-orange-400',
           dot: 'bg-orange-400',
-          label: '🟠 High Risk Store Pattern',
+          label: '🟠 HIGH RISK (Suspicious Patterns)',
           icon: <AlertCircle className="w-4 h-4 text-orange-400" />
         };
+      case 'CONFIRMED_FRAUD':
       case 'CONFIRMED_SCAM':
       case 'VERY HIGH':
         return {
           bg: 'bg-red-950/80 border-red-500/40 text-red-400',
           dot: 'bg-red-400',
-          label: '🔴 Confirmed Scam (Blacklisted)',
+          label: '🔴 CONFIRMED FRAUD (Blacklisted)',
           icon: <ShieldAlert className="w-4 h-4 text-red-400" />
         };
       case 'UNABLE_TO_VERIFY':
@@ -256,7 +264,7 @@ export const SocialScannerPage: React.FC = () => {
         return {
           bg: 'bg-slate-900 border-slate-700 text-slate-300',
           dot: 'bg-slate-400',
-          label: '⚪ Unable to Fully Verify (Unlisted)',
+          label: '⚪ UNABLE TO VERIFY (No Fraud Reports)',
           icon: <HelpCircle className="w-4 h-4 text-slate-400" />
         };
     }
@@ -270,18 +278,18 @@ export const SocialScannerPage: React.FC = () => {
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-emerald-950/80 border border-pink-500/30 text-[11px] font-black uppercase tracking-widest text-pink-300">
             <Sparkles className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-            Social E-Commerce & WhatsApp Fraud Shield
+            Social Shopping & WhatsApp Fraud Intelligence
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase">
             Instagram Fake Store & <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-emerald-400">
-              WhatsApp Fraud Detector
+              WhatsApp Scam Detector
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-slate-400 font-medium leading-relaxed">
-            Verify whether an Instagram storefront or WhatsApp seller contact is authentic, unverified, or a confirmed advance payment scam. Transparent OSINT threat intelligence with zero fake statistics.
+            Verify whether an Instagram storefront or WhatsApp seller contact is verified safe, unverified, or a confirmed fraud threat. Deterministic classification based strictly on verified records and transparent heuristics.
           </p>
         </div>
 
@@ -362,7 +370,7 @@ export const SocialScannerPage: React.FC = () => {
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="e.g. @shop_deals or instagram.com/store"
+                      placeholder="e.g. @myntra, @shop_deals or instagram.com/store"
                       className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
                     />
                   </div>
@@ -380,7 +388,7 @@ export const SocialScannerPage: React.FC = () => {
                       type="text"
                       value={whatsappQuery}
                       onChange={(e) => setWhatsappQuery(e.target.value)}
-                      placeholder="e.g. +91 98765 43210 or 9376635646"
+                      placeholder="e.g. +91 93766 35646 or +91 79770 79770"
                       className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
                     />
                   </div>
@@ -427,7 +435,7 @@ export const SocialScannerPage: React.FC = () => {
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={
                       activeTab === 'INSTAGRAM'
-                        ? 'e.g. @gifthampers65, @nike, @nike_india_outlet_sale'
+                        ? 'e.g. @myntra, @gifthampers65, @nike_india_outlet_sale'
                         : 'e.g. +91 93766 35646, +91 79770 79770, +91 98765 43210'
                     }
                     className="w-full pl-12 pr-32 py-4 rounded-2xl bg-slate-950 border border-slate-800 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition"
@@ -465,17 +473,17 @@ export const SocialScannerPage: React.FC = () => {
                 <>
                   <button
                     type="button"
+                    onClick={() => handleQuickTest('INSTAGRAM', '@myntra')}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition cursor-pointer"
+                  >
+                    @myntra (Verified Brand)
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleQuickTest('INSTAGRAM', '@gifthampers65')}
                     className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[11px] transition cursor-pointer"
                   >
                     @gifthampers65 (Unlisted)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickTest('INSTAGRAM', '@nike')}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition cursor-pointer"
-                  >
-                    @nike (Verified Brand)
                   </button>
                   <button
                     type="button"
@@ -518,7 +526,7 @@ export const SocialScannerPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex items-start gap-3 text-xs text-slate-400">
           <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
           <p>
-            <strong>SafeCart Trust & Safety Notice:</strong> SafeCart provides risk indicators based on verifiable threat blacklist data, verified corporate registries, and transparent linguistic pattern heuristics. It does not access private social media accounts or guarantee that an entity is legitimate or fraudulent.
+            <strong>SafeCart Trust & Safety Notice:</strong> SafeCart audits inputs against verified threat registries and transparent threat heuristics. It does not access private accounts or declare an unlisted entity as fraudulent without verified dispute evidence.
           </p>
         </div>
 
@@ -585,6 +593,37 @@ export const SocialScannerPage: React.FC = () => {
               <p className="text-xs text-slate-400 leading-relaxed">
                 {instaResult.evidenceSummary}
               </p>
+              <div className="pt-2 text-[11px] text-slate-500 font-mono">
+                Primary Intelligence Source: <span className="text-slate-300 font-semibold">{instaResult.primarySource}</span>
+              </div>
+            </div>
+
+            {/* Metrics & Report Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Verified Victim Reports</span>
+                <div className="text-sm font-black font-mono">
+                  {instaResult.reportedScamCount > 0 ? (
+                    <span className="text-red-400">{instaResult.reportedScamCount} Reports on Record</span>
+                  ) : (
+                    <span className="text-emerald-400">0 Reports Found</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Threat Assessment</span>
+                <div className="text-sm font-black text-slate-200">
+                  {instaResult.authenticityStatus.replace('_', ' ')}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Confidence Level</span>
+                <div className="text-sm font-black text-slate-200 font-mono">
+                  {instaResult.confidenceLevel}
+                </div>
+              </div>
             </div>
 
             {/* Data Sources Checked Grid */}
@@ -751,6 +790,37 @@ export const SocialScannerPage: React.FC = () => {
               <p className="text-xs text-slate-400 leading-relaxed">
                 {waResult.evidenceSummary}
               </p>
+              <div className="pt-2 text-[11px] text-slate-500 font-mono">
+                Primary Intelligence Source: <span className="text-slate-300 font-semibold">{waResult.primarySource}</span>
+              </div>
+            </div>
+
+            {/* Metrics Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Verified Victim Reports</span>
+                <div className="text-sm font-black font-mono">
+                  {waResult.reportedScamCount > 0 ? (
+                    <span className="text-red-400">{waResult.reportedScamCount} Reports on Record</span>
+                  ) : (
+                    <span className="text-emerald-400">0 Reports Found</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Risk Classification</span>
+                <div className="text-sm font-black text-slate-200">
+                  {waResult.riskLevel.replace('_', ' ')}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Confidence Level</span>
+                <div className="text-sm font-black text-slate-200 font-mono">
+                  {waResult.confidenceLevel}
+                </div>
+              </div>
             </div>
 
             {/* Reported UPI Handles */}
@@ -1138,7 +1208,7 @@ export const SocialScannerPage: React.FC = () => {
                 <textarea
                   required
                   rows={3}
-                  placeholder="Explain the incident (e.g. asked for advance UPI on WhatsApp, sent fake DTDC tracking, then blocked)..."
+                  placeholder="Explain the incident (e.g. asked for advance UPI on WhatsApp, sent fake tracking slip, then blocked)..."
                   value={reportForm.evidenceText}
                   onChange={(e) => setReportForm({ ...reportForm, evidenceText: e.target.value })}
                   className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-red-500"

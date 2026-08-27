@@ -211,7 +211,7 @@ export interface RiskSignalItem {
 export interface InstagramAnalysisResult {
   handle: string;
   fullUrl: string;
-  authenticityStatus: 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK' | 'CONFIRMED_SCAM' | 'UNABLE_TO_VERIFY';
+  authenticityStatus: 'VERIFIED_SAFE' | 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK' | 'CONFIRMED_FRAUD' | 'CONFIRMED_SCAM' | 'UNABLE_TO_VERIFY';
   riskScore: number;
   confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
   verificationStatus: string;
@@ -219,6 +219,7 @@ export interface InstagramAnalysisResult {
   officialBrandImpersonated?: string;
   reportedScamCount: number;
   evidenceSummary: string;
+  primarySource?: string;
   dataSourcesChecked: DataSourceCheck[];
   riskSignals: RiskSignalItem[];
   redirectionAnalysis: {
@@ -243,10 +244,11 @@ export interface WhatsAppAnalysisResult {
   verificationStatus: string;
   reportedScamCount: number;
   reportedUpiIds: string[];
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY HIGH' | 'UNABLE_TO_VERIFY';
+  riskLevel: 'VERIFIED_SAFE' | 'LOW_RISK' | 'LOW' | 'MEDIUM_RISK' | 'MEDIUM' | 'HIGH_RISK' | 'HIGH' | 'CONFIRMED_FRAUD' | 'CONFIRMED_SCAM' | 'VERY HIGH' | 'UNABLE_TO_VERIFY';
   riskScore: number;
   confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
   evidenceSummary: string;
+  primarySource?: string;
   dataSourcesChecked: DataSourceCheck[];
   knownFraudSchemes: string[];
   riskSignals: RiskSignalItem[];
@@ -261,7 +263,7 @@ export interface CrossPlatformAnalysisResult {
   linkStatus: 'VERIFIED_LINK' | 'POSSIBLE_LINK' | 'UNVERIFIED_INDEPENDENT';
   linkEvidence: string;
   compositeRiskScore: number;
-  compositeRiskLevel: 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK' | 'CONFIRMED_SCAM' | 'UNABLE_TO_VERIFY';
+  compositeRiskLevel: 'VERIFIED_SAFE' | 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK' | 'CONFIRMED_FRAUD' | 'CONFIRMED_SCAM' | 'UNABLE_TO_VERIFY';
   confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
   instagramAnalysis: InstagramAnalysisResult;
   whatsAppAnalysis: WhatsAppAnalysisResult;

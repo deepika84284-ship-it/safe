@@ -107,7 +107,7 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     riskScore: 88,
     impersonatedBrand: 'Surat Textiles',
     whatsAppNumber: '+919844455566',
-    upiId: 'suratfabrics@okhdfcbank',
+    upiId: 'surratfabrics@okhdfcbank',
     reportsCount: 24,
     evidence: 'Collects bulk advance payments on WhatsApp for designer sarees, sends sub-standard fabric scrap or disappears.'
   }
@@ -264,6 +264,7 @@ function analyzeInstagram(rawInput) {
       isVerifiedBadge: false,
       reportedScamCount: 0,
       evidenceSummary: error || 'Invalid Instagram handle format.',
+      primarySource: 'Input Syntax Validator',
       dataSourcesChecked: [
         { name: 'Input Syntax Validator', status: 'FLAGGED', details: error || 'Syntax violation' }
       ],
@@ -292,14 +293,15 @@ function analyzeInstagram(rawInput) {
     return {
       handle,
       fullUrl,
-      authenticityStatus: 'LOW_RISK',
+      authenticityStatus: 'VERIFIED_SAFE',
       riskScore: 5,
       confidenceLevel: 'HIGH',
-      verificationStatus: `Official Verified Brand Identity (${authenticRecord.brand})`,
+      verificationStatus: `Verified Official Brand Identity (${authenticRecord.brand})`,
       isVerifiedBadge: authenticRecord.verified,
       officialBrandImpersonated: undefined,
       reportedScamCount: 0,
       evidenceSummary: `Verified official corporate presence for ${authenticRecord.brand}. Direct checkout hosted on official domain ${authenticRecord.domain}.`,
+      primarySource: `SafeCart Verified Corporate Brand Registry (${authenticRecord.domain})`,
       dataSourcesChecked: [
         {
           name: 'Verified Corporate Brand Registry',
@@ -347,14 +349,15 @@ function analyzeInstagram(rawInput) {
     return {
       handle,
       fullUrl,
-      authenticityStatus: 'CONFIRMED_SCAM',
+      authenticityStatus: 'CONFIRMED_FRAUD',
       riskScore: knownScam.riskScore,
       confidenceLevel: 'HIGH',
-      verificationStatus: 'Confirmed Scam Operation (Blacklisted)',
+      verificationStatus: 'Confirmed Fraud Operation (Blacklisted in Threat Registry)',
       isVerifiedBadge: false,
       officialBrandImpersonated: knownScam.impersonatedBrand,
       reportedScamCount: knownScam.reportsCount,
       evidenceSummary: knownScam.evidence,
+      primarySource: `SafeCart Threat Intelligence Blacklist (${knownScam.reportsCount} Verified Victim Reports)`,
       dataSourcesChecked: [
         {
           name: 'SafeCart Threat Intelligence Blacklist',
@@ -406,13 +409,13 @@ function analyzeInstagram(rawInput) {
     };
   }
 
-  let riskScore = 0;
+  let riskScore = 15;
   const riskSignals = [];
   const dataSourcesChecked = [
     {
       name: 'SafeCart Threat Intelligence Blacklist',
       status: 'CHECKED_CLEAN',
-      details: 'No verified reports in active blacklist.'
+      details: '0 active scam complaints or blacklists.'
     },
     {
       name: 'Verified Corporate Brand Registry',
@@ -420,9 +423,9 @@ function analyzeInstagram(rawInput) {
       details: 'Not listed as a registered enterprise brand.'
     },
     {
-      name: 'Instagram Private Profile API',
+      name: 'Public Instagram Metadata',
       status: 'UNAVAILABLE',
-      details: 'Real-time follower count and account creation date require Meta Developer OAuth.'
+      details: 'Private follower count and account creation date cannot be accessed without Meta App API credentials.'
     }
   ];
 
@@ -451,9 +454,7 @@ function analyzeInstagram(rawInput) {
       points: 45,
       evidenceType: 'HEURISTIC_INDICATOR'
     });
-  }
-
-  if (matchedKeywords.length >= 2) {
+  } else if (matchedKeywords.length >= 2) {
     riskScore += 25;
     riskSignals.push({
       title: 'High-Risk E-Commerce Keywords in Handle',
@@ -464,31 +465,11 @@ function analyzeInstagram(rawInput) {
     });
   }
 
-  if (/\d{4,}/.test(handle)) {
-    riskScore += 15;
-    riskSignals.push({
-      title: 'Disposable Numerical Pattern',
-      description: 'Long trailing digit sequences are typical for auto-generated disposable accounts.',
-      severity: 'MEDIUM',
-      points: 15,
-      evidenceType: 'HEURISTIC_INDICATOR'
-    });
-  }
-
-  riskScore += 30;
   riskSignals.push({
-    title: 'Precautionary DM Store Risk Factor',
-    description: 'Social media DM storefronts lack automated buyer escrow and dispute resolution.',
-    severity: 'MEDIUM',
-    points: 20,
-    evidenceType: 'PRECAUTIONARY'
-  });
-
-  riskSignals.push({
-    title: 'Zero Reversible Buyer Protection',
-    description: 'Direct UPI/Bank transfers cannot be charged back if goods are counterfeit or not delivered.',
-    severity: 'MEDIUM',
-    points: 10,
+    title: 'Absence of Automated Escrow',
+    description: 'Social media DM transactions lack automated buyer dispute resolution.',
+    severity: 'LOW',
+    points: 15,
     evidenceType: 'PRECAUTIONARY'
   });
 
@@ -496,20 +477,20 @@ function analyzeInstagram(rawInput) {
 
   let authenticityStatus = 'UNABLE_TO_VERIFY';
   let confidenceLevel = 'LOW';
-  let verificationStatus = 'Unverified Public Profile – No Public Scam Reports Found';
+  let verificationStatus = 'Unable to Verify – No verified fraud reports found.';
 
   if (matchedBrand && matchedKeywords.length > 0) {
     authenticityStatus = 'HIGH_RISK';
     confidenceLevel = 'MEDIUM';
-    verificationStatus = `High Risk: Suspected Brand Impersonation (${matchedBrand})`;
+    verificationStatus = `High Risk Pattern: Suspected Brand Impersonation (${matchedBrand})`;
   } else if (matchedKeywords.length >= 2) {
     authenticityStatus = 'MEDIUM_RISK';
     confidenceLevel = 'MEDIUM';
-    verificationStatus = 'Elevated Risk: Aggressive Sale Keywords Pattern';
+    verificationStatus = 'Medium Risk: Aggressive Clearance Keywords Pattern';
   } else {
     authenticityStatus = 'UNABLE_TO_VERIFY';
     confidenceLevel = 'LOW';
-    verificationStatus = 'Unable to Fully Verify – Standard Public Social Account';
+    verificationStatus = 'Unable to Verify – No verified fraud reports found.';
   }
 
   return {
@@ -522,14 +503,15 @@ function analyzeInstagram(rawInput) {
     isVerifiedBadge: false,
     officialBrandImpersonated: matchedBrand,
     reportedScamCount: 0,
-    evidenceSummary: `No verified community scam reports on file for @${handle}. Analysis reflects heuristic risk indicators for off-platform transactions.`,
+    evidenceSummary: `No verified fraud reports, blacklist entries, or brand impersonation patterns were found for @${handle} in the SafeCart Threat Registry.`,
+    primarySource: 'SafeCart Threat Intelligence Blacklist (0 Matches) | Public Username Syntax Engine',
     dataSourcesChecked,
     riskSignals,
     redirectionAnalysis: {
       redirectsToWhatsApp: true,
       redirectUrl: undefined,
       bypassesBuyerProtection: true,
-      warningNote: 'Standard social commerce risk: Ensure seller provides verified GST registration before paying via UPI.'
+      warningNote: 'Standard social commerce precaution: Ensure seller provides verified GST registration before paying via UPI.'
     },
     recommendations: [
       'NEVER transfer funds to personal UPI handles or scan QR codes over Instagram DM.',
@@ -560,6 +542,7 @@ function analyzeWhatsApp(rawNumber) {
       riskScore: 0,
       confidenceLevel: 'LOW',
       evidenceSummary: error || 'Invalid phone number format provided.',
+      primarySource: 'ITU E.164 Number Format Validator',
       dataSourcesChecked: [
         { name: 'ITU E.164 Number Format Validator', status: 'FLAGGED', details: error || 'Invalid length' }
       ],
@@ -589,13 +572,14 @@ function analyzeWhatsApp(rawNumber) {
       telecomCircle,
       isVirtualOrVoip: false,
       associatedBusinessName: authentic.businessName,
-      verificationStatus: 'Official Verified Corporate Enterprise',
+      verificationStatus: 'Verified Safe – Official Corporate Support Channel',
       reportedScamCount: 0,
       reportedUpiIds: [],
-      riskLevel: 'LOW',
+      riskLevel: 'VERIFIED_SAFE',
       riskScore: 5,
       confidenceLevel: 'HIGH',
       evidenceSummary: `Verified corporate communication channel for ${authentic.businessName} (${authentic.brandDomain}). Protected under corporate consumer policy.`,
+      primarySource: `SafeCart Verified Corporate Helpline Registry (${authentic.brandDomain})`,
       dataSourcesChecked: [
         {
           name: 'Verified Enterprise Helpline Registry',
@@ -648,10 +632,11 @@ function analyzeWhatsApp(rawNumber) {
       verificationStatus: 'Confirmed Fraud Phone in Threat Registry',
       reportedScamCount: known.reportedCount,
       reportedUpiIds: known.upiIds,
-      riskLevel: 'VERY HIGH',
+      riskLevel: 'CONFIRMED_FRAUD',
       riskScore: known.riskScore,
       confidenceLevel: 'HIGH',
       evidenceSummary: `Identified in threat network with ${known.reportedCount} verified victim complaints. Associated with fake entity "${known.associatedName}" and unauthorized UPI handles.`,
+      primarySource: `SafeCart Threat Intelligence Blacklist (${known.reportedCount} Verified Complaints)`,
       dataSourcesChecked: [
         {
           name: 'SafeCart Threat Intelligence Blacklist',
@@ -700,32 +685,32 @@ function analyzeWhatsApp(rawNumber) {
 
   const isSpecialVoip = normalized.startsWith('1800') || normalized.startsWith('900');
   const riskSignals = [];
-  let riskScore = 30;
+  let riskScore = 15;
 
   if (isSpecialVoip) {
-    riskScore += 20;
+    riskScore += 15;
     riskSignals.push({
       title: 'Toll-Free / Virtual Prefix Detected',
       description: 'Toll-free numbers used for WhatsApp commerce warrant additional identity verification.',
       severity: 'MEDIUM',
-      points: 20,
+      points: 15,
       evidenceType: 'HEURISTIC_INDICATOR'
     });
   } else {
     riskSignals.push({
-      title: 'Unverified Private Cellular Number',
-      description: 'Number is registered as an individual cellular line without enterprise business verification.',
+      title: 'Standard Cellular Number Series',
+      description: 'Valid cellular series. No registered corporate business identity on file.',
       severity: 'LOW',
-      points: 15,
+      points: 10,
       evidenceType: 'HEURISTIC_INDICATOR'
     });
   }
 
   riskSignals.push({
     title: 'Absence of Commercial Escrow',
-    description: 'Transactions via direct personal messaging carry inherent counterparty risk.',
+    description: 'Direct messaging transactions carry inherent counterparty risk without payment protection.',
     severity: 'LOW',
-    points: 15,
+    points: 5,
     evidenceType: 'PRECAUTIONARY'
   });
 
@@ -737,13 +722,14 @@ function analyzeWhatsApp(rawNumber) {
     telecomCircle,
     isVirtualOrVoip: isSpecialVoip,
     associatedBusinessName: 'Unverified Private Contact',
-    verificationStatus: 'Unable to Fully Verify – No Verified Scam or Business Registration Found',
+    verificationStatus: 'Unable to Verify – No verified fraud reports found.',
     reportedScamCount: 0,
     reportedUpiIds: [],
     riskLevel: 'UNABLE_TO_VERIFY',
     riskScore,
     confidenceLevel: 'LOW',
-    evidenceSummary: `No verified scam reports or malicious UPI IDs found in threat registry for ${formatted}. Baseline cautionary indicators apply for off-platform transactions.`,
+    evidenceSummary: `No verified fraud reports, blacklist entries, or malicious payment handles were found for this number (${formatted}) in the SafeCart Threat Registry.`,
+    primarySource: 'SafeCart Threat Intelligence Blacklist (0 Matches) | Telephony E.164 Format Registry',
     dataSourcesChecked: [
       {
         name: 'SafeCart Threat Intelligence Blacklist',
@@ -814,16 +800,19 @@ function analyzeCrossPlatform(rawInstagram, rawWhatsApp) {
   }
 
   let compositeRiskLevel = 'UNABLE_TO_VERIFY';
-  if (compositeRiskScore >= 80) compositeRiskLevel = 'CONFIRMED_SCAM';
+  if (compositeRiskScore >= 80) compositeRiskLevel = 'CONFIRMED_FRAUD';
   else if (compositeRiskScore >= 60) compositeRiskLevel = 'HIGH_RISK';
   else if (compositeRiskScore >= 35) compositeRiskLevel = 'MEDIUM_RISK';
-  else if (compositeRiskScore <= 15) compositeRiskLevel = 'LOW_RISK';
-  else compositeRiskLevel = 'UNABLE_TO_VERIFY';
+  else if (compositeRiskScore <= 10 && instaAnalysis.authenticityStatus === 'VERIFIED_SAFE' && waAnalysis.riskLevel === 'VERIFIED_SAFE') {
+    compositeRiskLevel = 'VERIFIED_SAFE';
+  } else {
+    compositeRiskLevel = 'UNABLE_TO_VERIFY';
+  }
 
   const confidenceLevel =
     linkStatus === 'VERIFIED_LINK' || (instaAnalysis.confidenceLevel === 'HIGH' && waAnalysis.confidenceLevel === 'HIGH')
       ? 'HIGH'
-      : 'MEDIUM';
+      : 'LOW';
 
   const recommendations = [
     'Always confirm that the WhatsApp number is publicly linked on the seller’s registered corporate website.',
@@ -867,8 +856,8 @@ export default async function handler(req, res) {
     if (url.includes('/health')) {
       return res.status(200).json({
         status: 'ok',
-        service: 'SafeCart Cybersecurity Engine (Vercel Serverless)',
-        version: '2.0.0',
+        service: 'SafeCart Threat Registry Engine (Vercel Serverless)',
+        version: '2.1.0',
         timestamp: new Date().toISOString()
       });
     }
@@ -923,7 +912,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       status: 'ok',
-      service: 'SafeCart Serverless API Engine',
+      service: 'SafeCart Serverless Threat Engine',
       path: url
     });
   } catch (err) {
