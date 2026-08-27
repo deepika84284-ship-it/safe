@@ -3,7 +3,6 @@ import {
   WhatsAppAnalysisResult,
   RiskLevel
 } from '../types';
-import { db } from '../db/store';
 
 // Known authentic verified brand accounts for reference
 const KNOWN_AUTHENTIC_INSTAGRAM_ACCOUNTS: Record<string, { brand: string; verified: boolean }> = {
