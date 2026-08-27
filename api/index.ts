@@ -16,8 +16,8 @@ app.use(
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
-// Health check
-app.get('/api/health', (req, res) => {
+// Health check endpoint
+app.get(['/health', '/api/health'], (req, res) => {
   res.json({
     status: 'ok',
     service: 'SafeCart Cybersecurity Engine (Vercel Serverless)',
@@ -26,8 +26,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Main API Routes
+// Main API Routes mounted on both /api and root
 app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // Centralized error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -40,4 +41,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-export default app;
+export default function handler(req: any, res: any) {
+  return app(req, res);
+}
