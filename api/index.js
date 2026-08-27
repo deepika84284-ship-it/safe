@@ -107,7 +107,7 @@ const KNOWN_SCAM_INSTAGRAM_HANDLES = {
     riskScore: 88,
     impersonatedBrand: 'Surat Textiles',
     whatsAppNumber: '+919844455566',
-    upiId: 'surratfabrics@okhdfcbank',
+    upiId: 'suratfabrics@okhdfcbank',
     reportsCount: 24,
     evidence: 'Collects bulk advance payments on WhatsApp for designer sarees, sends sub-standard fabric scrap or disappears.'
   }
@@ -837,6 +837,46 @@ function analyzeCrossPlatform(rawInstagram, rawWhatsApp) {
   };
 }
 
+function sendJson(res, statusCode, data) {
+  try {
+    res.statusCode = statusCode;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+    );
+    if (typeof res.status === 'function' && typeof res.json === 'function') {
+      return res.status(statusCode).json(data);
+    }
+    res.end(JSON.stringify(data));
+  } catch (e) {
+    try {
+      res.end(JSON.stringify(data));
+    } catch {}
+  }
+}
+
+async function parseBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        resolve({});
+      }
+    });
+  });
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -847,38 +887,40 @@ export default async function handler(req, res) {
   );
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.statusCode = 200;
+    return res.end();
   }
 
   const url = req.url || '';
+  const body = await parseBody(req);
 
   try {
     if (url.includes('/health')) {
-      return res.status(200).json({
+      return sendJson(res, 200, {
         status: 'ok',
-        service: 'SafeCart Threat Registry Engine (Vercel Serverless)',
-        version: '2.1.0',
+        service: 'SafeCart Threat Registry Engine',
+        version: '2.2.0',
         timestamp: new Date().toISOString()
       });
     }
 
     if (url.includes('/social/scan-cross-platform') || url.includes('/scan-cross-platform')) {
-      const instagram = req.body?.instagram || req.query?.instagram || '';
-      const whatsapp = req.body?.whatsapp || req.query?.whatsapp || '';
+      const instagram = body?.instagram || req.query?.instagram || '';
+      const whatsapp = body?.whatsapp || req.query?.whatsapp || '';
       const analysis = analyzeCrossPlatform(instagram, whatsapp);
-      return res.status(200).json({ success: true, analysis });
+      return sendJson(res, 200, { success: true, analysis });
     }
 
     if (url.includes('/social/scan-instagram') || url.includes('/scan-instagram')) {
-      const target = req.body?.target || req.query?.target || '';
+      const target = body?.target || req.query?.target || '';
       const analysis = analyzeInstagram(target);
-      return res.status(200).json({ success: true, analysis });
+      return sendJson(res, 200, { success: true, analysis });
     }
 
     if (url.includes('/social/scan-whatsapp') || url.includes('/scan-whatsapp')) {
-      const target = req.body?.target || req.query?.target || '';
+      const target = body?.target || req.query?.target || '';
       const analysis = analyzeWhatsApp(target);
-      return res.status(200).json({ success: true, analysis });
+      return sendJson(res, 200, { success: true, analysis });
     }
 
     if (url.includes('/social/threats') || url.includes('/threats')) {
@@ -904,19 +946,19 @@ export default async function handler(req, res) {
         upiId: data.upiIds[0]
       }));
 
-      return res.status(200).json({
+      return sendJson(res, 200, {
         success: true,
         threats: { instagramThreats, whatsAppThreats }
       });
     }
 
-    return res.status(200).json({
+    return sendJson(res, 200, {
       status: 'ok',
       service: 'SafeCart Serverless Threat Engine',
       path: url
     });
   } catch (err) {
-    return res.status(500).json({
+    return sendJson(res, 500, {
       success: false,
       message: err?.message || 'Server error'
     });
