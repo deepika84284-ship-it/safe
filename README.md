@@ -13,50 +13,50 @@
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 <p align="center">
-  <b>SafeCart</b> is an intelligent, AI-powered cybersecurity & fraud-prevention ecosystem designed to protect online shoppers and merchants from fake shopping websites, phishing scams, social media fraud, and malicious payment gateways.
+  <b>SafeCart</b> is an intelligent, AI-powered cybersecurity & fraud-prevention ecosystem designed to protect online shoppers and merchants from fake shopping websites, phishing scams, social media fraud, and fraudulent payment gateways.
 </p>
 
-[✨ Live Demo](#-quick-start) • [🚀 Key Features](#-core-features--uses) • [🛠️ Architecture](#-system-architecture) • [📖 API Reference](#-backend-api-routes) • [🛡️ Security](#-security-measures)
+[✨ Live Demo](#-quick-start) • [🚀 Key Features](#-core-features--use-cases) • [🛠️ Architecture](#-system-architecture--tech-stack) • [📖 API Reference](#-backend-api-routes) • [🛡️ Security](#-security--guardrails)
 
 ---
 
 </div>
 
-## 📌 ஏன் SafeCart? (Problem Statement & Purpose)
+## 📌 Problem Statement & Overview
 
-இன்றைய ஆன்லைன் ஷாப்பிங் உலகில் போலியான இ-காமர்ஸ் தளங்கள், இன்ஸ்டாகிராம்/வாட்ஸ்அப் மோசடி டீல்கள், ஃபிஷிங் லிங்குகள் மற்றும் பணம் பறிக்கும் போலி QR/UPI கட்டணங்கள் மூலம் நுகர்வோர் பெருமளவில் ஏமாற்றப்படுகிறார்கள்.
+In today's digital shopping era, consumers lose billions annually to counterfeit e-commerce stores, fraudulent social media ads, fake flash sale domains, and phishing gateways. 
 
-**SafeCart இதற்கான ஒரு முழுமையான பாதுகாப்பு அரணாக உருவாக்கப்பட்டுள்ளது:**
-- 🔍 எந்த ஒரு ஷாப்பிங் இணையதளத்தையும் நொடிகளில் ஆய்வு செய்து அதன் நம்பகத்தன்மையை (Trust Score) கண்டறியும்.
-- 🤖 கூகுள் **Gemini AI** மூலம் சந்தேகத்திற்குரிய மெசேஜ்கள், போலி டீல்கள், வாய்ஸ் புகார்களை பகுப்பாய்வு செய்யும்.
-- 📱 Instagram Stores மற்றும் WhatsApp மோசடி எண்களை அடையாளம் காணும்.
-- 💳 பாதுகாப்பான **Escrow / Protected Payment Sandbox** அனுபவத்தை வழங்கும்.
+**SafeCart was built to provide an all-in-one defense shield:**
+- 🔍 **Instant Domain Verification:** Evaluates trust signals, SSL health, DNS records, and domain age in real-time.
+- 🤖 **AI-Powered Threat Detection:** Leverages **Google Gemini AI** to inspect suspicious promotional messages, scam offers, and voice reports.
+- 📱 **Social Commerce Defense:** Protects users against fraudulent Instagram shops and fake WhatsApp business numbers.
+- 💳 **Protected Checkout & Escrow Sandbox:** Simulates a secure escrow payment sandbox with instant refund guarantees.
 
 ---
 
-## 🌟 Core Features & Uses (முக்கிய அம்சங்கள்)
+## 🌟 Core Features & Use Cases
 
 ### 1. 🌐 Real-Time URL & Domain Risk Scanner
-- **Domain Age & SSL Analysis:** இணையதளத்தின் வயது, SSL சான்றிதழ், DNS மற்றும் WHOIS பதிவுகளை சரிபார்க்கிறது.
-- **Phishing & Typosquatting Guard:** பிரபலமான பிராண்டுகளைப் போல உருவாக்கப்பட்ட போலி டொமைன்களை (e.g., `amaz0n-sale.xyz`) உடனடியாகக் கண்டறியும்.
-- **Dynamic Risk Gauge:** 0 முதல் 100 வரையிலான துல்லியமான Risk Score மற்றும் Safe / Suspicious / Dangerous நிலைகளை வழங்குகிறது.
+- **Domain Age & WHOIS Inspection:** Flags newly registered domains often created for quick seasonal scams.
+- **Phishing & Typosquatting Guard:** Automatically identifies subtle brand name misspellings (e.g., `amaz0n-deal.xyz`).
+- **Dynamic Risk Gauge:** Computes a composite **0–100 Risk Score** categorized into **Safe**, **Suspicious**, and **Dangerous** states.
 
-### 2. 🤖 Gemini AI-Powered Cybersecurity Assistant
-- **AI Fraud Auditor:** சந்தேகத்திற்குரிய மெசேஜ்கள், SMS, ஃபிஷிங் மின்னஞ்சல்களை ஸ்கேன் செய்து எச்சரிக்கும்.
-- **Multilingual Support:** தமிழ் மற்றும் ஆங்கிலத்தில் உடனடி ஆலோசனை வழங்கும் AI சாட்பாட்.
-- **Voice Scam Reporting:** குரல் பதிவுகள் மூலமாகவே மோசடி புகார்களைப் பெற்று டிரான்ஸ்கிரைப் செய்து பகுப்பாய்வு செய்யும்.
+### 2. 🤖 Gemini AI Cybersecurity Assistant
+- **AI Fraud Auditor:** Deciphers suspicious SMS messages, phishing emails, and urgent scam triggers.
+- **Multilingual Fraud Advisor:** Interactive 24/7 AI chatbot assisting users in English, Tamil, and other languages.
+- **Voice Scam Reporting:** Allows victims to record scam complaints by voice; the system transcribes and audits the audio automatically.
 
 ### 3. 📸 Social Media Scam Hunter (Instagram & WhatsApp)
-- **Instagram Profile Scanner:** போலியான ஆன்லைன் ஸ்டோர் பக்கங்கள், திடீர் பெயர் மாற்றங்கள், போலி Followers-களைக் கண்டறியும்.
-- **WhatsApp Fraud Verifier:** போலி ஆபர்களை அனுப்பும் ஸ்பேம்/மோசடி எண்களை அனலைஸ் செய்யும்.
+- **Instagram Store Analyzer:** Identifies red flags such as frequent handle changes, disabled comments, and fake follower ratios.
+- **WhatsApp Fraud Verifier:** Cross-checks contact numbers against known malicious seller databases.
 
 ### 4. 🔒 GPay UPI Escrow & Demo Payment Sandbox
-- பயனர்கள் பாதுகாப்பற்ற தளங்களில் பணம் செலுத்துவதற்கு முன் பாதுகாப்பு வழங்கும் எஸ்க்ரோ (Protected Checkout) முறை.
-- விர்ச்சுவல் விபிஏ (VPA) வெரிஃபிகேஷன் மற்றும் Mock Refund சிமுலேஷன்.
+- Simulates an escrow-based secure checkout where payments are safely held until product delivery confirmation.
+- Includes virtual VPA validation and an automated dispute/refund simulator.
 
 ### 5. 👥 Community Scam Reporting & Admin Dashboard
-- பயனர்கள் மோசடி தளங்களை பொதுவெளியில் புகாரளிக்கலாம்.
-- அட்மின் டேஷ்போர்டில் புகார்களை மதிப்பாய்வு செய்து டேக் செய்யும் வசதி மற்றும் ஆடிட் லாக்ஸ்.
+- Crowdsourced community incident reporting with verification mechanisms.
+- Comprehensive administrative control panel with threat moderation, real-time analytics, and audit trails.
 
 ---
 
@@ -64,12 +64,12 @@
 
 ```mermaid
 graph TD
-    User([👤 User / Online Shopper]) -->|Browse & Scan| Frontend[⚛️ React 19 + TailwindCSS v4 SPA]
+    User([👤 Online Shopper / Analyst]) -->|Interact & Scan| Frontend[⚛️ React 19 + TailwindCSS v4 SPA]
     Frontend -->|REST API Requests| Backend[⚡ Express.js + TypeScript Engine]
     
-    Backend -->|Analyze Domain & Threat Signals| RiskEngine[🛡️ Real-Time Risk & SSRF Engine]
-    Backend -->|Prompt & Chat Analysis| GeminiAI[🤖 Google Gemini 2.5 AI Model]
-    Backend -->|Data Persistence| DB[(🍃 MongoDB Atlas / In-Memory Store)]
+    Backend -->|Heuristics & Threat Analysis| RiskEngine[🛡️ Real-Time Risk & SSRF Guard]
+    Backend -->|Generative AI Prompts| GeminiAI[🤖 Google Gemini 2.5 AI Model]
+    Backend -->|Data Persistence| DB[(🍃 MongoDB Atlas / Resilient In-Memory Store)]
     Backend -->|Escrow Sandbox| Payment[💳 Secure UPI / Escrow Sandbox]
 ```
 
@@ -80,39 +80,41 @@ graph TD
 | **Backend** | Node.js, Express.js, TypeScript, TSX |
 | **Artificial Intelligence** | `@google/genai` (Google Gemini 2.5 Flash API) |
 | **Database** | MongoDB Atlas with Mongoose/Native Driver + Resilient In-Memory Fallback |
-| **Security** | Helmet.js, SSRF Protection Guard, Rate Limiting, JWT Auth, Bcrypt.js |
+| **Security & Utilities** | Helmet.js, SSRF Protection Guard, Rate Limiting, JWT Auth, Bcrypt.js, Zod |
 
 ---
 
-## 🚀 Quick Start (எப்படி இயக்குவது?)
+## 🚀 Quick Start (Run Locally)
 
-### 1. Repository-ஐ Clone செய்யவும்:
+### 1. Clone the Repository:
 ```bash
 git clone https://github.com/deepika84284-ship-it/safe.git
 cd safe
 ```
 
-### 2. Dependencies நிறுவவும்:
+### 2. Install Dependencies:
 ```bash
 npm install
 ```
 
-### 3. Environment Variables அமைக்கவும்:
-`.env` கோப்பில் உங்கள் API Key மற்றும் MongoDB தகவல்களைச் சேர்க்கவும்:
+### 3. Setup Environment Variables:
+Create or edit your `.env` file in the root directory:
 ```env
 PORT=3000
 NODE_ENV="development"
 MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/safecart"
-JWT_SECRET="your_jwt_secret_key"
+JWT_SECRET="your_secure_jwt_secret_key"
 GEMINI_API_KEY="your_google_gemini_api_key"
+CLIENT_URL="http://localhost:5173"
+APP_URL="http://localhost:3000"
 ```
 
-### 4. Server-ஐ இயக்கவும்:
+### 4. Start the Application:
 ```bash
 npm run dev
 ```
 
-Browser-ல் **`http://localhost:3000`** சென்று SafeCart தளத்தைப் பயன்படுத்தலாம்!
+Open your browser and navigate to **`http://localhost:3000`** to experience SafeCart!
 
 ---
 
@@ -120,37 +122,37 @@ Browser-ல் **`http://localhost:3000`** சென்று SafeCart தளத
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Server Health & Engine status |
-| `POST` | `/api/auth/register` | User Signup with password hashing |
-| `POST` | `/api/auth/login` | User Login with JWT Token generation |
-| `POST` | `/api/scans` | Analyze Website Domain URL & calculate Risk Score |
-| `GET` | `/api/scans/history` | Retrieve user's previous scan history |
-| `POST` | `/api/ai/chat` | Chat with Gemini AI Fraud Consultant |
-| `POST` | `/api/ai/analyze-message` | Analyze suspicious SMS / phishing messages |
-| `POST` | `/api/social/scan-instagram` | Scan Instagram handle for fake store traits |
-| `POST` | `/api/social/scan-whatsapp` | Verify WhatsApp fraud numbers |
-| `POST` | `/api/reports` | Submit community scam report |
-| `GET` | `/api/safety-tips` | Fetch cybersecurity awareness tips |
+| `GET` | `/api/health` | Service health status & engine uptime |
+| `POST` | `/api/auth/register` | User signup with secure password hashing |
+| `POST` | `/api/auth/login` | User login and JWT authentication token generation |
+| `POST` | `/api/scans` | Analyze website domain URL & calculate Risk Score |
+| `GET` | `/api/scans/history` | Retrieve user scan history and verdicts |
+| `POST` | `/api/ai/chat` | Interact with Gemini AI Fraud Consultant |
+| `POST` | `/api/ai/analyze-message` | Analyze suspicious SMS and phishing messages |
+| `POST` | `/api/social/scan-instagram` | Scan Instagram handle for counterfeit vendor traits |
+| `POST` | `/api/social/scan-whatsapp` | Verify suspicious WhatsApp vendor phone numbers |
+| `POST` | `/api/reports` | Submit community scam report with evidence |
+| `GET` | `/api/safety-tips` | Fetch cybersecurity awareness guides |
 | `GET` | `/api/admin/dashboard` | Admin analytics, threats overview & moderation |
 
 ---
 
-## 🔐 Security Measures
+## 🛡️ Security & Guardrails
 
-- **🛡️ SSRF Guard:** Server-Side Request Forgery தாக்குதல்களைத் தடுக்க Private IP & Localhost Scanning தடுக்கப்பட்டுள்ளது.
-- **⚡ Rate Limiting:** DDOS மற்றும் API abuse-ஐத் தடுக்க IP-based Rate Limiter செயல்படுத்தப்பட்டுள்ளது.
-- **🔒 Secure Auth:** Passwords `bcryptjs` கொண்டு hash செய்யப்பட்டு, பாதுகாப்பான `JWT` Tokens வழங்கப்படுகிறது.
-- **🛡️ Helmet Security Headers:** Content-Security, XSS, Clickjacking போன்ற அச்சுறுத்தல்களில் இருந்து பாதுகாக்கிறது.
+- **🛡️ SSRF Guard:** Server-Side Request Forgery prevention blocks requests to private IPv4/IPv6 ranges and loopback interfaces.
+- **⚡ Rate Limiting:** IP-based throttling protects all public scan endpoints against denial-of-service abuse.
+- **🔒 Password Hashing & JWT:** Implements `bcryptjs` (salt rounds: 10) and secure JSON Web Tokens with expiry enforcement.
+- **🛡️ HTTP Security Headers:** Pre-configured with `helmet` to mitigate XSS, Clickjacking, and MIME sniffing attacks.
 
 ---
 
 ## 👥 Contributors & Credits
 
 - **Deepika** — *Lead Developer & Architect* ([GitHub Profile](https://github.com/deepika84284-ship-it))
-- Built with ❤️ for safer digital commerce.
+- Built with ❤️ to ensure safer digital shopping for everyone.
 
 ---
 
 <div align="center">
-  <b>⭐ If you found SafeCart helpful, give this repository a Star! ⭐</b>
+  <b>⭐ Star this repository on GitHub if you find SafeCart helpful! ⭐</b>
 </div>
