@@ -8,55 +8,54 @@
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-TailwindCSS%20v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%20%2F%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Google Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini%202.5-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 <p align="center">
-  <b>SafeCart</b> is an intelligent, AI-powered cybersecurity & fraud-prevention ecosystem designed to protect online shoppers and merchants from fake shopping websites, phishing scams, social media fraud, and fraudulent payment gateways.
+  <b>SafeCart</b> is a comprehensive cybersecurity & e-commerce fraud prevention platform designed from scratch to protect online shoppers and merchants from fake shopping websites, phishing scams, social media fraud, and malicious payment gateways.
 </p>
 
-[✨ Live Demo](#-quick-start) • [🚀 Key Features](#-core-features--use-cases) • [🛠️ Architecture](#-system-architecture--tech-stack) • [📖 API Reference](#-backend-api-routes) • [🛡️ Security](#-security--guardrails)
+[✨ Quick Start](#-quick-start-run-locally) • [🚀 Core Features](#-core-features--implementation) • [🛠️ Architecture](#-system-architecture--tech-stack) • [📖 API Reference](#-backend-api-routes) • [🛡️ Security](#-security--guardrails)
 
 ---
 
 </div>
 
-## 📌 Problem Statement & Overview
+## 📌 Project Overview & Purpose
 
-In today's digital shopping era, consumers lose billions annually to counterfeit e-commerce stores, fraudulent social media ads, fake flash sale domains, and phishing gateways. 
+Online shopping scams, fake e-commerce stores, fraudulent social media ads, and phishing payment links cause immense financial losses to consumers every day.
 
-**SafeCart was built to provide an all-in-one defense shield:**
-- 🔍 **Instant Domain Verification:** Evaluates trust signals, SSL health, DNS records, and domain age in real-time.
-- 🤖 **AI-Powered Threat Detection:** Leverages **Google Gemini AI** to inspect suspicious promotional messages, scam offers, and voice reports.
-- 📱 **Social Commerce Defense:** Protects users against fraudulent Instagram shops and fake WhatsApp business numbers.
-- 💳 **Protected Checkout & Escrow Sandbox:** Simulates a secure escrow payment sandbox with instant refund guarantees.
+**SafeCart was engineered as an all-in-one defense platform to tackle this:**
+- 🔍 **Real-Time Website Risk Analysis:** Evaluates domain age, SSL certificate validity, DNS records, and brand spoofing heuristics.
+- 💬 **Intelligent Scam Auditor & Assistant:** Audits suspicious SMS/texts, promotional scam messages, and voice complaints with tailored guidance.
+- 📱 **Social Commerce Defense:** Protects users by analyzing suspicious Instagram shops and verifying WhatsApp business seller numbers.
+- 💳 **Protected Checkout & Escrow Sandbox:** Provides an escrow simulation workflow that safeguards buyer funds until confirmed delivery.
 
 ---
 
-## 🌟 Core Features & Use Cases
+## 🌟 Core Features & Implementation
 
-### 1. 🌐 Real-Time URL & Domain Risk Scanner
-- **Domain Age & WHOIS Inspection:** Flags newly registered domains often created for quick seasonal scams.
-- **Phishing & Typosquatting Guard:** Automatically identifies subtle brand name misspellings (e.g., `amaz0n-deal.xyz`).
-- **Dynamic Risk Gauge:** Computes a composite **0–100 Risk Score** categorized into **Safe**, **Suspicious**, and **Dangerous** states.
+### 1. 🌐 Real-Time URL & Domain Risk Engine
+- **Domain Age & WHOIS Analysis:** Automatically flags newly registered domains created for short-lived scams.
+- **Phishing & Typosquatting Guard:** Detects subtle character variations and spoofed brand domains (e.g., `amaz0n-deal.xyz`).
+- **Dynamic Risk Gauge:** Computes a composite **0–100 Risk Score** categorized into **Safe**, **Suspicious**, and **Dangerous** ratings.
 
-### 2. 🤖 Gemini AI Cybersecurity Assistant
-- **AI Fraud Auditor:** Deciphers suspicious SMS messages, phishing emails, and urgent scam triggers.
-- **Multilingual Fraud Advisor:** Interactive 24/7 AI chatbot assisting users in English, Tamil, and other languages.
-- **Voice Scam Reporting:** Allows victims to record scam complaints by voice; the system transcribes and audits the audio automatically.
+### 2. 🛡️ Intelligent Fraud Assistant & Message Auditor
+- **Scam Message Auditor:** Scans suspicious SMS, urgent prize notices, and phishing emails for red flags.
+- **Multi-Language Interactive Assistant:** Provides real-time guidance and answers consumer doubts in English and Tamil.
+- **Voice Scam Incident Recorder:** Allows users to record voice complaints directly; the platform transcribes and evaluates the incident.
 
 ### 3. 📸 Social Media Scam Hunter (Instagram & WhatsApp)
-- **Instagram Store Analyzer:** Identifies red flags such as frequent handle changes, disabled comments, and fake follower ratios.
-- **WhatsApp Fraud Verifier:** Cross-checks contact numbers against known malicious seller databases.
+- **Instagram Store Analyzer:** Detects red flags such as frequent account name changes, disabled comments, and unnatural engagement ratios.
+- **WhatsApp Fraud Verifier:** Cross-checks phone numbers against known fraudulent seller patterns and history.
 
 ### 4. 🔒 GPay UPI Escrow & Demo Payment Sandbox
-- Simulates an escrow-based secure checkout where payments are safely held until product delivery confirmation.
+- Simulates an escrow-based secure payment flow where money is held securely until package delivery verification.
 - Includes virtual VPA validation and an automated dispute/refund simulator.
 
 ### 5. 👥 Community Scam Reporting & Admin Dashboard
-- Crowdsourced community incident reporting with verification mechanisms.
-- Comprehensive administrative control panel with threat moderation, real-time analytics, and audit trails.
+- Crowdsourced incident reporting system with community feedback loops.
+- Centralized administrative dashboard for reviewing reported threats, updating website safety verdicts, and viewing audit logs.
 
 ---
 
@@ -67,8 +66,8 @@ graph TD
     User([👤 Online Shopper / Analyst]) -->|Interact & Scan| Frontend[⚛️ React 19 + TailwindCSS v4 SPA]
     Frontend -->|REST API Requests| Backend[⚡ Express.js + TypeScript Engine]
     
-    Backend -->|Heuristics & Threat Analysis| RiskEngine[🛡️ Real-Time Risk & SSRF Guard]
-    Backend -->|Generative AI Prompts| GeminiAI[🤖 Google Gemini 2.5 AI Model]
+    Backend -->|Domain & Threat Signal Analysis| RiskEngine[🛡️ Custom Risk & SSRF Guard]
+    Backend -->|Intelligent Scam Analysis| AssistantEngine[🧠 Scam Auditor & Advisor Engine]
     Backend -->|Data Persistence| DB[(🍃 MongoDB Atlas / Resilient In-Memory Store)]
     Backend -->|Escrow Sandbox| Payment[💳 Secure UPI / Escrow Sandbox]
 ```
@@ -78,8 +77,7 @@ graph TD
 |---|---|
 | **Frontend** | React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Recharts, Framer Motion |
 | **Backend** | Node.js, Express.js, TypeScript, TSX |
-| **Artificial Intelligence** | `@google/genai` (Google Gemini 2.5 Flash API) |
-| **Database** | MongoDB Atlas with Mongoose/Native Driver + Resilient In-Memory Fallback |
+| **Database** | MongoDB Atlas (Native Driver) + Resilient In-Memory Storage Engine |
 | **Security & Utilities** | Helmet.js, SSRF Protection Guard, Rate Limiting, JWT Auth, Bcrypt.js, Zod |
 
 ---
@@ -98,13 +96,12 @@ npm install
 ```
 
 ### 3. Setup Environment Variables:
-Create or edit your `.env` file in the root directory:
+Create a `.env` file in the project root directory:
 ```env
 PORT=3000
 NODE_ENV="development"
 MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/safecart"
 JWT_SECRET="your_secure_jwt_secret_key"
-GEMINI_API_KEY="your_google_gemini_api_key"
 CLIENT_URL="http://localhost:5173"
 APP_URL="http://localhost:3000"
 ```
@@ -114,7 +111,7 @@ APP_URL="http://localhost:3000"
 npm run dev
 ```
 
-Open your browser and navigate to **`http://localhost:3000`** to experience SafeCart!
+Open your browser and navigate to **`http://localhost:3000`** to run SafeCart locally.
 
 ---
 
@@ -122,12 +119,12 @@ Open your browser and navigate to **`http://localhost:3000`** to experience Safe
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Service health status & engine uptime |
+| `GET` | `/api/health` | Engine health status & uptime |
 | `POST` | `/api/auth/register` | User signup with secure password hashing |
 | `POST` | `/api/auth/login` | User login and JWT authentication token generation |
 | `POST` | `/api/scans` | Analyze website domain URL & calculate Risk Score |
 | `GET` | `/api/scans/history` | Retrieve user scan history and verdicts |
-| `POST` | `/api/ai/chat` | Interact with Gemini AI Fraud Consultant |
+| `POST` | `/api/ai/chat` | Fraud advice & assistant consultation endpoint |
 | `POST` | `/api/ai/analyze-message` | Analyze suspicious SMS and phishing messages |
 | `POST` | `/api/social/scan-instagram` | Scan Instagram handle for counterfeit vendor traits |
 | `POST` | `/api/social/scan-whatsapp` | Verify suspicious WhatsApp vendor phone numbers |
@@ -139,17 +136,17 @@ Open your browser and navigate to **`http://localhost:3000`** to experience Safe
 
 ## 🛡️ Security & Guardrails
 
-- **🛡️ SSRF Guard:** Server-Side Request Forgery prevention blocks requests to private IPv4/IPv6 ranges and loopback interfaces.
-- **⚡ Rate Limiting:** IP-based throttling protects all public scan endpoints against denial-of-service abuse.
-- **🔒 Password Hashing & JWT:** Implements `bcryptjs` (salt rounds: 10) and secure JSON Web Tokens with expiry enforcement.
-- **🛡️ HTTP Security Headers:** Pre-configured with `helmet` to mitigate XSS, Clickjacking, and MIME sniffing attacks.
+- **🛡️ SSRF Guard:** Built-in Server-Side Request Forgery prevention that blocks access to internal network IP ranges.
+- **⚡ Rate Limiting:** Custom IP-based throttling protects public scan endpoints against brute force and denial-of-service abuse.
+- **🔒 Password Security & JWT:** Implements `bcryptjs` with salted hashing and standard JSON Web Token expiry validation.
+- **🛡️ HTTP Security Headers:** Configured with `helmet` for defense against XSS, clickjacking, and MIME sniffing attacks.
 
 ---
 
-## 👥 Contributors & Credits
+## 👥 Authors & Credits
 
-- **Deepika** — *Lead Developer & Architect* ([GitHub Profile](https://github.com/deepika84284-ship-it))
-- Built with ❤️ to ensure safer digital shopping for everyone.
+- **Deepika** — *Lead Developer & Platform Architect* ([GitHub Profile](https://github.com/deepika84284-ship-it))
+- Built to provide safer digital commerce and fraud protection for everyone.
 
 ---
 
