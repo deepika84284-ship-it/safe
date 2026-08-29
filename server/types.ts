@@ -28,8 +28,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  passwordHash: string;
   role: UserRole;
+  passwordHash?: string;
   createdAt: string;
 }
 
@@ -39,7 +39,7 @@ export interface RiskSignal {
   title: string;
   description: string;
   severity: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  points: number; // positive increases risk score
+  points: number;
   detected: boolean;
   evidence?: string;
 }
@@ -125,16 +125,6 @@ export interface Report {
   updatedAt: string;
 }
 
-export interface Dispute {
-  id: string;
-  reportId: string;
-  userId: string;
-  domain: string;
-  status: 'OPEN' | 'RESOLVED' | 'DISMISSED';
-  resolutionNotes?: string;
-  createdAt: string;
-}
-
 export interface MockTransaction {
   id: string;
   userId: string;
@@ -173,17 +163,6 @@ export interface VpaAnalysisResult {
   riskReasons: string[];
 }
 
-export interface AdminAction {
-  id: string;
-  adminId: string;
-  adminEmail: string;
-  actionType: 'UPDATE_REPORT_STATUS' | 'OVERRIDE_WEBSITE_RISK' | 'RESCAN_DOMAIN' | 'DELETE_REPORT';
-  targetType: 'REPORT' | 'WEBSITE' | 'SCAN';
-  targetId: string;
-  details: string;
-  timestamp: string;
-}
-
 export interface SafetyTip {
   id: string;
   category: string;
@@ -192,6 +171,17 @@ export interface SafetyTip {
   checklist: string[];
   severityNote: string;
   readTime: string;
+}
+
+export interface AdminAction {
+  id: string;
+  adminId: string;
+  adminEmail: string;
+  actionType: string;
+  targetType: string;
+  targetId: string;
+  details: string;
+  timestamp: string;
 }
 
 export interface DataSourceCheck {
@@ -333,4 +323,3 @@ export interface AudioTranscriptionResult {
   detectedLanguage?: string;
   confidenceScore?: number;
 }
-

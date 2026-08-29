@@ -69,7 +69,7 @@ const translations: Record<Language, Record<string, string>> = {
     'features.sslCheck': 'SSL & Identity Validation',
     'features.sslCheckDesc': 'Verifies certificate validity, Let\'s Encrypt free certificate expiry, and fraudulent identity impersonation.',
     'features.socialIntel': 'Instagram & WhatsApp Shield',
-    'features.socialIntelDesc': 'Analyzes follower-to-engagement ratio, frequent handle renames, missing return policies, and blacklisted phone numbers.',
+    'features.socialIntelDesc': 'Audits verified brand identity, handle syntax patterns, off-platform payment traps, and threat registry dispute reports.',
     'features.upiDefense': 'UPI & QR Code Defense',
     'features.upiDefenseDesc': 'Detects advance payment extortion, fake reverse QR codes ("Scan to receive refund"), and unverified personal UPI IDs.',
     'features.geminiAi': 'Gemini 3.7 AI Copilot',
