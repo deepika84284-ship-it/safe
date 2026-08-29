@@ -1349,10 +1349,16 @@ function analyzeJobEmailInJs(input) {
   const content = String(input?.emailContent || input?.content || '').trim();
   const sender = String(input?.senderEmail || input?.sender || '').trim().toLowerCase();
   const company = String(input?.companyName || input?.company || '').trim();
-  const url = String(input?.jobUrl || input?.url || '').trim();
+  const rawJobUrl = String(input?.jobUrl || input?.url || '').trim();
+
+  let targetUrl = rawJobUrl;
+  if (!targetUrl) {
+    const urlMatch = content.match(/https?:\/\/[^\s<"']+/i);
+    if (urlMatch) targetUrl = urlMatch[0];
+  }
 
   const senderDomain = sender.includes('@') ? sender.split('@')[1] : '';
-  const publicProviders = ['gmail.com', 'yahoo.com', 'yahoo.co.in', 'hotmail.com', 'outlook.com', 'rediffmail.com'];
+  const publicProviders = ['gmail.com', 'yahoo.com', 'yahoo.co.in', 'hotmail.com', 'outlook.com', 'rediffmail.com', 'yandex.com', 'protonmail.com', 'icloud.com'];
   const isPublicProvider = publicProviders.includes(senderDomain);
 
   const enterprises = [
@@ -1362,33 +1368,35 @@ function analyzeJobEmailInJs(input) {
     { name: 'TCS', domain: 'tcs.com' },
     { name: 'Infosys', domain: 'infosys.com' },
     { name: 'Wipro', domain: 'wipro.com' },
-    { name: 'Accenture', domain: 'accenture.com' }
+    { name: 'Accenture', domain: 'accenture.com' },
+    { name: 'Deloitte', domain: 'deloitte.com' },
+    { name: 'IBM', domain: 'ibm.com' }
   ];
 
   let isImpersonatingEnterprise = false;
-  let matchedEnterpriseName = '';
+  let matchedEnterprise = null;
 
-  if (isPublicProvider || (senderDomain && !enterprises.some((e) => senderDomain.endsWith(e.domain)))) {
-    for (const ent of enterprises) {
-      const lowerContent = (content + ' ' + company + ' ' + sender).toLowerCase();
-      if (lowerContent.includes(ent.name.toLowerCase())) {
+  const combinedSearchText = (content + ' ' + company + ' ' + sender).toLowerCase();
+  for (const ent of enterprises) {
+    if (combinedSearchText.includes(ent.name.toLowerCase())) {
+      matchedEnterprise = ent;
+      if (isPublicProvider || (senderDomain && !senderDomain.endsWith(ent.domain))) {
         isImpersonatingEnterprise = true;
-        matchedEnterpriseName = ent.name;
-        break;
       }
+      break;
     }
   }
 
-  const isVerifiedCorporateDomain = enterprises.some(
-    (e) => senderDomain === e.domain || senderDomain.endsWith('.' + e.domain)
-  );
+  const isVerifiedCorporateDomain = matchedEnterprise
+    ? senderDomain === matchedEnterprise.domain || senderDomain.endsWith('.' + matchedEnterprise.domain)
+    : enterprises.some((e) => senderDomain === e.domain || senderDomain.endsWith('.' + e.domain));
 
   const lowerContent = content.toLowerCase();
   const redFlags = [];
   const positiveIndicators = [];
   let riskScore = 10;
 
-  if (content.length < 20 && !sender && !url) {
+  if (content.length < 15 && !sender && !targetUrl) {
     return {
       verdict: 'UNABLE_TO_VERIFY',
       verdictEnglish: 'Unable to Verify – Insufficient Job Information',
@@ -1407,60 +1415,108 @@ function analyzeJobEmailInJs(input) {
     };
   }
 
-  const feeKeywords = ['registration fee', 'processing fee', 'processing charge', 'security deposit', 'refundable deposit', 'laptop fee', 'training fee', 'interview charge', 'pay rs', 'pay $'];
-  let actualFeeDemands = [];
+  // 1. ADVANCE FEE DEMAND
+  const feeKeywords = ['background verification fee', 'verification fee', 'registration fee', 'processing fee', 'processing charge', 'security deposit', 'refundable deposit', 'laptop fee', 'training fee', 'interview charge', 'pay rs', 'pay ₹', 'pay $'];
+  let detectedFeePhrases = [];
   let isFeeNegated = false;
 
-  for (const k of feeKeywords) {
-    const idx = lowerContent.indexOf(k);
+  for (const kw of feeKeywords) {
+    const idx = lowerContent.indexOf(kw);
     if (idx !== -1) {
       const precedingText = lowerContent.substring(Math.max(0, idx - 45), idx);
       if (/never\s+charges?|does\s+not\s+charge|no\s+fee|free\s+of\s+cost|never\s+asks?|does\s+not\s+ask/i.test(precedingText)) {
         isFeeNegated = true;
       } else {
-        actualFeeDemands.push(k);
+        detectedFeePhrases.push(kw);
       }
     }
   }
 
-  if (actualFeeDemands.length > 0) {
-    redFlags.push(`Demands advance payment for recruitment (${actualFeeDemands.join(', ')})`);
-    riskScore += 65;
+  const feeAmountMatch = lowerContent.match(/(?:rs\.?|₹|\$)\s?\d+(?:,\d+)*(?:\s*(?:fee|charge|deposit|payment|verification))/i) ||
+                         lowerContent.match(/(?:background verification|registration|processing|laptop|training)\s+(?:fee|charge|deposit)?\s*(?:of|is)?\s*(?:rs\.?|₹|\$)\s?\d+(?:,\d+)*/i);
+
+  if (detectedFeePhrases.length > 0 || feeAmountMatch) {
+    const feeText = feeAmountMatch ? feeAmountMatch[0] : detectedFeePhrases.join(', ');
+    redFlags.push(`Demands advance payment for recruitment (${feeText})`);
+    riskScore += 35;
   } else if (isFeeNegated) {
     positiveIndicators.push('Explicitly clarifies that employer never demands recruitment/registration fees');
     riskScore -= 10;
   }
 
-  const credentialKeywords = ['bank account password', 'upi pin', 'otp', 'net banking password', 'credit card details', 'cvv'];
+  // 2. ENTERPRISE HR IMPERSONATION
+  if (isImpersonatingEnterprise && matchedEnterprise) {
+    redFlags.push(`Enterprise HR Impersonation: Claims to represent ${matchedEnterprise.name} while communicating from an unauthorized email address (${sender || 'unverified domain'})`);
+    riskScore += 30;
+  }
+
+  // 3. FREE PUBLIC EMAIL DOMAIN
+  if (isPublicProvider) {
+    if (isImpersonatingEnterprise || detectedFeePhrases.length > 0 || feeAmountMatch || targetUrl) {
+      redFlags.push(`Recruiter email uses a free public domain (@${senderDomain}) instead of official corporate domain`);
+      riskScore += 15;
+    } else {
+      positiveIndicators.push(`Recruiter uses standard public email provider (@${senderDomain})`);
+    }
+  }
+
+  // 4. SUSPICIOUS / NON-OFFICIAL CAREER URL
+  if (targetUrl) {
+    try {
+      const parsedUrl = new URL(targetUrl.startsWith('http') ? targetUrl : `http://${targetUrl}`);
+      const urlDomain = parsedUrl.hostname.toLowerCase();
+      const expectedDomain = matchedEnterprise ? matchedEnterprise.domain : '';
+      const isOfficialUrl = expectedDomain ? (urlDomain === expectedDomain || urlDomain.endsWith('.' + expectedDomain)) : false;
+      const suspiciousTlds = ['.xyz', '.shop', '.top', '.click', '.site', '.info', '.work', '.club', '.online'];
+      const hasSuspiciousTld = suspiciousTlds.some((tld) => urlDomain.endsWith(tld));
+
+      if (matchedEnterprise && !isOfficialUrl) {
+        redFlags.push(`Suspicious Job Link: Provided URL (${urlDomain}) does not belong to official ${matchedEnterprise.name} corporate domain (${matchedEnterprise.domain})`);
+        riskScore += 25;
+      } else if (hasSuspiciousTld) {
+        redFlags.push(`Suspicious Job Domain: Provided link (${urlDomain}) uses a high-risk suspicious TLD`);
+        riskScore += 20;
+      } else if (isOfficialUrl || /careers|workday|greenhouse|lever\.co/i.test(urlDomain)) {
+        positiveIndicators.push(`Job link (${urlDomain}) belongs to verified corporate/ATS portal`);
+        riskScore -= 15;
+      }
+    } catch {
+      redFlags.push(`Malformed or invalid job link URL: ${targetUrl}`);
+      riskScore += 10;
+    }
+  }
+
+  // 5. HIGH PRESSURE URGENCY
+  const urgencyKeywords = ['urgent', 'immediately', 'within 2 hours', 'within 24 hours', 'offer expires today', 'limited slots', 'pay today', 'action required immediately', 'last chance'];
+  const matchedUrgency = urgencyKeywords.filter((u) => lowerContent.includes(u));
+  if (matchedUrgency.length > 0) {
+    redFlags.push(`Employs high-pressure urgency tactics requiring immediate response/payment (${matchedUrgency.join(', ')})`);
+    riskScore += 15;
+  }
+
+  // 6. CREDENTIAL / FINANCIAL THEFT
+  const credentialKeywords = ['bank account password', 'upi pin', 'otp', 'net banking password', 'credit card details', 'cvv', 'aadhaar otp'];
   const matchedCreds = credentialKeywords.filter((k) => lowerContent.includes(k));
   if (matchedCreds.length > 0) {
     redFlags.push(`Requests sensitive financial credentials or OTP (${matchedCreds.join(', ')})`);
-    riskScore += 70;
+    riskScore += 40;
   }
 
-  if (/earn\s+(\$|rs\.?)\s?\d{3,}/i.test(lowerContent) || /daily income|work from home typing|data entry rs|no interview required|instant selection letter/i.test(lowerContent)) {
-    redFlags.push('Promises unrealistic daily income or instant selection without formal technical interview');
-    riskScore += 25;
+  // 7. UNREALISTIC SALARY / NO INTERVIEW OFFER
+  if (/earn\s+(\$|rs\.?|\u20B9)\s?\d{3,}/i.test(lowerContent) || /daily income|work from home typing|data entry rs|no interview required|instant selection letter/i.test(lowerContent)) {
+    redFlags.push('Promises unrealistic income or instant selection letter without formal interview');
+    riskScore += 20;
   }
 
-  if (isPublicProvider && (company || isImpersonatingEnterprise)) {
-    redFlags.push(`Recruiter email uses free public domain (@${senderDomain}) instead of official corporate domain for ${matchedEnterpriseName || company || 'enterprise'}`);
-    riskScore += 35;
-  }
-
+  // 8. TELEGRAM / WHATSAPP REDIRECTION
   if (/telegram|wa\.me|whatsapp interview|chat interview/i.test(lowerContent)) {
-    redFlags.push('Directs candidate to Telegram or WhatsApp for confidential interview or offer processing');
+    redFlags.push('Directs candidate to off-platform messaging apps (Telegram/WhatsApp) for confidential recruitment');
     riskScore += 20;
   }
 
   if (isVerifiedCorporateDomain) {
-    positiveIndicators.push(`Sender email (@${senderDomain}) belongs to verified official corporate domain`);
+    positiveIndicators.push(`Sender email (@${senderDomain}) belongs to official corporate domain`);
     riskScore -= 35;
-  }
-
-  if (url && /careers|jobs|corporate|workday|greenhouse|lever\.co/i.test(url)) {
-    positiveIndicators.push('Includes link to official corporate career portal or ATS platform');
-    riskScore -= 15;
   }
 
   riskScore = Math.max(5, Math.min(100, riskScore));
@@ -1493,12 +1549,12 @@ function analyzeJobEmailInJs(input) {
     verdictTamil,
     riskScore,
     threatLevel,
-    scamCategory: actualFeeDemands.length > 0 ? 'Advance Recruitment Fee Scam' : matchedCreds.length > 0 ? 'Credential & OTP Harvesting Trap' : isPublicProvider ? 'HR Domain Impersonation' : 'Job Security Analysis',
+    scamCategory: detectedFeePhrases.length > 0 || feeAmountMatch ? 'Advance Recruitment Fee Scam' : isImpersonatingEnterprise ? 'Enterprise HR Impersonation' : matchedCreds.length > 0 ? 'Credential Harvesting Trap' : 'Job Security Analysis',
     redFlags,
     positiveIndicators,
     recommendedActions: [
-      'NEVER pay any registration fee, security deposit, or laptop charge for job selection.',
-      'Verify job vacancies directly on the employer’s official website (e.g. company.com/careers).',
+      'NEVER pay any registration fee, background verification charge, or security deposit for job selection.',
+      'Verify job vacancies directly on the employer’s official careers website (e.g. company.com/careers).',
       'Do not share bank OTPs, UPI PINs, or card CVVs under any pretext.',
       'If you paid money to a fake recruiter, call 1930 National Cyber Crime Helpline immediately.'
     ],
