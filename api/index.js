@@ -38,6 +38,14 @@ const memoryUsers = [
     createdAt: '2025-01-10T10:00:00.000Z'
   },
   {
+    id: 'usr_test_admin_01',
+    name: 'SafeCart Test Administrator',
+    email: 'test.admin@safecart.test',
+    passwordHash: bcrypt.hashSync('SafeCart#Admin2026!Sec', initialSalt),
+    role: 'ADMIN',
+    createdAt: '2025-01-01T00:00:00.000Z'
+  },
+  {
     id: 'usr_ramya_01',
     name: 'Ramya Admin',
     email: 'ramya@safecart.security',
@@ -1906,6 +1914,7 @@ export default async function handler(req, res) {
       if (!isValid) {
         if (user.email === 'user@safecart.local' && (password === 'User123!' || password === 'User@123456')) isValid = true;
         if (user.email === 'admin@safecart.local' && (password === 'Admin123!' || password === 'Admin@123456')) isValid = true;
+        if (user.email === 'test.admin@safecart.test' && password === 'SafeCart#Admin2026!Sec') isValid = true;
         if (user.email === 'user@safecart.security' && (password === 'User@123456' || password === 'User123!')) isValid = true;
         if (user.email === 'admin@safecart.security' && (password === 'Admin@123456' || password === 'Admin123!')) isValid = true;
         if (user.email === 'ramya@safecart.security' && password === 'ramya200') isValid = true;

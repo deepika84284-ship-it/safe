@@ -82,6 +82,15 @@ export class DataStore {
       createdAt: '2025-01-01T00:00:00.000Z'
     };
 
+    const testAdmin: User = {
+      id: 'usr_test_admin_01',
+      name: 'SafeCart Test Administrator',
+      email: 'test.admin@safecart.test',
+      passwordHash: bcrypt.hashSync('SafeCart#Admin2026!Sec', salt),
+      role: 'ADMIN',
+      createdAt: '2025-01-01T00:00:00.000Z'
+    };
+
     const regularUser: User = {
       id: 'usr_shopper_01',
       name: 'Elena Rostova',
@@ -93,6 +102,7 @@ export class DataStore {
 
     this.users.set(demoConsumer.id, demoConsumer);
     this.users.set(demoAdmin.id, demoAdmin);
+    this.users.set(testAdmin.id, testAdmin);
     this.users.set(adminUser.id, adminUser);
     this.users.set(ramyaAdmin.id, ramyaAdmin);
     this.users.set(regularUser.id, regularUser);
