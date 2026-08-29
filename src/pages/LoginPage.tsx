@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Shield, Lock, Mail, ArrowRight, UserCheck, ShieldAlert } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const { success, error } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const redirectParam = searchParams.get('redirect');
+  const fromLocation = (location.state as any)?.from?.pathname;
+  const rawTarget = redirectParam ? decodeURIComponent(redirectParam) : (fromLocation || null);
+  const targetRedirect = rawTarget && rawTarget.startsWith('/') && !rawTarget.startsWith('/login') && !rawTarget.startsWith('/register') ? rawTarget : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +29,9 @@ export const LoginPage: React.FC = () => {
 
     if (res.success) {
       success('Welcome back!', 'Successfully signed in to SafeCart.');
-      if (res.user?.role === 'ADMIN') {
+      if (targetRedirect) {
+        navigate(targetRedirect);
+      } else if (res.user?.role === 'ADMIN') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
