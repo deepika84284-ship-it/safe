@@ -1396,7 +1396,7 @@ function analyzeJobEmailInJs(input) {
   const positiveIndicators = [];
   let riskScore = 10;
 
-  if (content.length < 15 && !sender && !targetUrl) {
+  if (content.length < 20 && !sender && !targetUrl) {
     return {
       verdict: 'UNABLE_TO_VERIFY',
       verdictEnglish: 'Unable to Verify – Insufficient Job Information',

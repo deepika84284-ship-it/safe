@@ -98,7 +98,7 @@ export function analyzeJobScamEmail(input: JobEmailInput): JobScamAnalysisResult
   let riskScore = 10;
 
   // Empty / Insufficient Data Check
-  if (content.length < 15 && !sender && !targetUrl) {
+  if (content.length < 20 && !sender && !targetUrl) {
     return {
       verdict: 'UNABLE_TO_VERIFY',
       verdictEnglish: 'Unable to Verify – Insufficient Job Information',
