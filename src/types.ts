@@ -324,3 +324,26 @@ export interface AudioTranscriptionResult {
   confidenceScore?: number;
 }
 
+export interface JobScamAnalysisResult {
+  verdict: 'LIKELY_LEGIT' | 'SUSPICIOUS' | 'LIKELY_JOB_SCAM' | 'UNABLE_TO_VERIFY';
+  verdictEnglish: string;
+  verdictTamil: string;
+  riskScore: number;
+  threatLevel: 'SAFE' | 'LOW_RISK' | 'SUSPICIOUS' | 'HIGH_RISK' | 'CONFIRMED_SCAM';
+  scamCategory: string;
+  redFlags: string[];
+  positiveIndicators: string[];
+  recommendedActions: string[];
+  senderAnalysis: {
+    senderEmail: string;
+    domain: string;
+    isPublicEmailProvider: boolean;
+    isImpersonatingEnterprise: boolean;
+  };
+  helplineInfo: {
+    cyberHelpline: string;
+    reportingPortal: string;
+    note: string;
+  };
+}
+

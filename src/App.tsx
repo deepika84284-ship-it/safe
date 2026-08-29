@@ -23,6 +23,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { UserDashboardPage } from './pages/UserDashboardPage';
+import { JobScamScannerPage } from './pages/JobScamScannerPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AiAssistantWidget } from './components/AiAssistantWidget';
 
@@ -39,6 +40,8 @@ export default function App() {
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/scanner" element={<ScannerPage />} />
                   <Route path="/social-scanner" element={<SocialScannerPage />} />
+                  <Route path="/job-scam-scanner" element={<JobScamScannerPage />} />
+                  <Route path="/job-scanner" element={<JobScamScannerPage />} />
                   <Route path="/ai-assistant" element={<AiAssistantPage />} />
                   <Route path="/scan/:id" element={<ScanResultPage />} />
                   <Route path="/website/:domain" element={<WebsiteDetailsPage />} />

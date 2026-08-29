@@ -11,7 +11,8 @@ import {
   SuspiciousMessageAnalysis,
   AudioTranscriptionResult,
   VpaAnalysisResult,
-  CrossPlatformAnalysisResult
+  CrossPlatformAnalysisResult,
+  JobScamAnalysisResult
 } from '../types';
 import {
   analyzeInstagramProfileClient,
@@ -600,6 +601,27 @@ export const api = {
       data: AudioTranscriptionResult;
     }>('/ai/transcribe-voice', payload);
     return res.data;
+  },
+
+  analyzeJobEmail: async (data: {
+    emailContent: string;
+    senderEmail?: string;
+    companyName?: string;
+    jobUrl?: string;
+  }) => {
+    try {
+      const res = await apiClient.post<{
+        success: boolean;
+        analysis: JobScamAnalysisResult;
+      }>('/scam/job-email', data);
+      return res.data;
+    } catch {
+      const res = await apiClient.post<{
+        success: boolean;
+        analysis: JobScamAnalysisResult;
+      }>('/job-email', data);
+      return res.data;
+    }
   }
 };
 

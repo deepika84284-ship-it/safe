@@ -17,7 +17,8 @@ import {
   X,
   CreditCard,
   Globe,
-  Languages
+  Languages,
+  Briefcase
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -99,6 +100,17 @@ export const Navbar: React.FC = () => {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
             <span>{t('nav.socialShield')}</span>
+          </Link>
+          <Link
+            to="/job-scam-scanner"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5 ${
+              isActive('/job-scam-scanner')
+                ? 'text-cyan-300 bg-cyan-950/70 border border-cyan-500/50 shadow-sm shadow-cyan-500/20'
+                : 'text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/30'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Job Scam Scanner</span>
           </Link>
           <Link
             to="/ai-assistant"
@@ -293,6 +305,14 @@ export const Navbar: React.FC = () => {
               className="p-2.5 rounded-lg bg-pink-950/60 text-pink-300 border border-pink-500/30 hover:text-pink-200"
             >
               {t('nav.socialShield')}
+            </Link>
+            <Link
+              to="/job-scam-scanner"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2.5 rounded-lg bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 hover:text-cyan-200 text-center flex items-center justify-center gap-1.5"
+            >
+              <Briefcase className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Job Scam Scanner</span>
             </Link>
             <Link
               to="/ai-assistant"

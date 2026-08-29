@@ -1345,6 +1345,151 @@ function analyzeQrPayload(qrText) {
   };
 }
 
+function analyzeJobEmailInJs(input) {
+  const content = String(input?.emailContent || input?.content || '').trim();
+  const sender = String(input?.senderEmail || input?.sender || '').trim().toLowerCase();
+  const company = String(input?.companyName || input?.company || '').trim();
+  const url = String(input?.jobUrl || input?.url || '').trim();
+
+  const senderDomain = sender.includes('@') ? sender.split('@')[1] : '';
+  const publicProviders = ['gmail.com', 'yahoo.com', 'yahoo.co.in', 'hotmail.com', 'outlook.com', 'rediffmail.com'];
+  const isPublicProvider = publicProviders.includes(senderDomain);
+
+  const enterprises = [
+    { name: 'Google', domain: 'google.com' },
+    { name: 'Amazon', domain: 'amazon.com' },
+    { name: 'Microsoft', domain: 'microsoft.com' },
+    { name: 'TCS', domain: 'tcs.com' },
+    { name: 'Infosys', domain: 'infosys.com' },
+    { name: 'Wipro', domain: 'wipro.com' },
+    { name: 'Accenture', domain: 'accenture.com' }
+  ];
+
+  let isImpersonatingEnterprise = false;
+  let matchedEnterpriseName = '';
+
+  if (isPublicProvider || (senderDomain && !enterprises.some((e) => senderDomain.endsWith(e.domain)))) {
+    for (const ent of enterprises) {
+      const lowerContent = (content + ' ' + company + ' ' + sender).toLowerCase();
+      if (lowerContent.includes(ent.name.toLowerCase())) {
+        isImpersonatingEnterprise = true;
+        matchedEnterpriseName = ent.name;
+        break;
+      }
+    }
+  }
+
+  const isVerifiedCorporateDomain = enterprises.some(
+    (e) => senderDomain === e.domain || senderDomain.endsWith('.' + e.domain)
+  );
+
+  const lowerContent = content.toLowerCase();
+  const redFlags = [];
+  const positiveIndicators = [];
+  let riskScore = 10;
+
+  if (content.length < 20 && !sender && !url) {
+    return {
+      verdict: 'UNABLE_TO_VERIFY',
+      verdictEnglish: 'Unable to Verify – Insufficient Job Information',
+      verdictTamil: 'சரிபார்க்க முடியவில்லை - குறைந்த தகவல்',
+      riskScore: 25,
+      threatLevel: 'LOW_RISK',
+      scamCategory: 'Insufficient Recruitment Data',
+      redFlags: ['Email content or offer details were too short for automated heuristic evaluation.'],
+      positiveIndicators: [],
+      recommendedActions: [
+        'Paste the full text of the job offer or interview email.',
+        'Include the sender email address (e.g. recruiter@company.com).'
+      ],
+      senderAnalysis: { senderEmail: sender, domain: senderDomain, isPublicEmailProvider: isPublicProvider, isImpersonatingEnterprise: false },
+      helplineInfo: { cyberHelpline: '1930', reportingPortal: 'cybercrime.gov.in', note: 'Employers will NEVER ask candidates to pay money for job offers.' }
+    };
+  }
+
+  const feeKeywords = ['registration fee', 'processing fee', 'processing charge', 'security deposit', 'refundable deposit', 'laptop fee', 'training fee', 'interview charge', 'pay rs', 'pay $'];
+  const matchedFees = feeKeywords.filter((k) => lowerContent.includes(k));
+  if (matchedFees.length > 0) {
+    redFlags.push(`Demands advance payment for recruitment (${matchedFees.join(', ')})`);
+    riskScore += 65;
+  }
+
+  const credentialKeywords = ['bank account password', 'upi pin', 'otp', 'net banking password', 'credit card details', 'cvv'];
+  const matchedCreds = credentialKeywords.filter((k) => lowerContent.includes(k));
+  if (matchedCreds.length > 0) {
+    redFlags.push(`Requests sensitive financial credentials or OTP (${matchedCreds.join(', ')})`);
+    riskScore += 70;
+  }
+
+  if (/earn\s+(\$|rs\.?)\s?\d{3,}/i.test(lowerContent) || /daily income|work from home typing|data entry rs|no interview required|instant selection letter/i.test(lowerContent)) {
+    redFlags.push('Promises unrealistic daily income or instant selection without formal technical interview');
+    riskScore += 35;
+  }
+
+  if (isPublicProvider && (company || isImpersonatingEnterprise)) {
+    redFlags.push(`Recruiter email uses free public domain (@${senderDomain}) instead of official company domain for ${matchedEnterpriseName || company || 'enterprise'}`);
+    riskScore += 40;
+  }
+
+  if (/telegram|wa\.me|whatsapp interview|chat interview/i.test(lowerContent)) {
+    redFlags.push('Directs candidate to Telegram or WhatsApp for confidential interview or offer processing');
+    riskScore += 25;
+  }
+
+  if (isVerifiedCorporateDomain) {
+    positiveIndicators.push(`Sender email (@${senderDomain}) belongs to verified official corporate domain`);
+    riskScore -= 35;
+  }
+
+  if (url && /careers|jobs|corporate|workday|greenhouse|lever\.co/i.test(url)) {
+    positiveIndicators.push('Includes link to official corporate career portal or ATS platform');
+    riskScore -= 15;
+  }
+
+  riskScore = Math.max(5, Math.min(100, riskScore));
+
+  let verdict = 'SUSPICIOUS';
+  let verdictEnglish = 'Suspicious Job Offer – Exercise Caution';
+  let verdictTamil = 'சந்தேகத்திற்குரிய வேலை வாய்ப்பு - எச்சரிக்கையாக இருக்கவும்';
+  let threatLevel = 'SUSPICIOUS';
+
+  if (riskScore >= 75) {
+    verdict = 'LIKELY_JOB_SCAM';
+    verdictEnglish = 'HIGH RISK: Likely Fraudulent Job Scam';
+    verdictTamil = 'அதிக ஆபத்து: இது ஒரு வேலைவாய்ப்பு மோசடியாக இருக்கலாம்';
+    threatLevel = 'CONFIRMED_SCAM';
+  } else if (riskScore >= 40) {
+    verdict = 'SUSPICIOUS';
+    verdictEnglish = 'Elevated Risk – Suspicious Recruitment Pattern';
+    verdictTamil = 'சந்தேகத்திற்குரிய வேலைவாய்ப்பு தொடர்பு';
+    threatLevel = 'HIGH_RISK';
+  } else {
+    verdict = 'LIKELY_LEGIT';
+    verdictEnglish = 'Likely Authentic Job Recruitment Email';
+    verdictTamil = 'உண்மையான வேலைவாய்ப்பு அறிவிப்பு';
+    threatLevel = 'SAFE';
+  }
+
+  return {
+    verdict,
+    verdictEnglish,
+    verdictTamil,
+    riskScore,
+    threatLevel,
+    scamCategory: matchedFees.length > 0 ? 'Advance Recruitment Fee Scam' : matchedCreds.length > 0 ? 'Credential & OTP Harvesting Trap' : isPublicProvider ? 'HR Domain Impersonation' : 'Job Security Analysis',
+    redFlags,
+    positiveIndicators,
+    recommendedActions: [
+      'NEVER pay any registration fee, security deposit, or laptop charge for job selection.',
+      'Verify job vacancies directly on the employer’s official website (e.g. company.com/careers).',
+      'Do not share bank OTPs, UPI PINs, or card CVVs under any pretext.',
+      'If you paid money to a fake recruiter, call 1930 National Cyber Crime Helpline immediately.'
+    ],
+    senderAnalysis: { senderEmail: sender, domain: senderDomain, isPublicEmailProvider: isPublicProvider, isImpersonatingEnterprise: isImpersonatingEnterprise },
+    helplineInfo: { cyberHelpline: '1930', reportingPortal: 'cybercrime.gov.in', note: 'Legitimate corporate employers will NEVER ask candidates for advance payments.' }
+  };
+}
+
 function generateAiReply(prompt) {
   const p = String(prompt || '').toLowerCase();
   let verdict = 'INFO';
@@ -1813,6 +1958,15 @@ export default async function handler(req, res) {
             urgentActionNote: 'Call 1930 within 2 hours of payment to freeze funds.'
           }
         }
+      });
+    }
+
+    // Job Scam Email Scanner Route
+    if (url.includes('/scam/job-email') || url.includes('/scams/job-email') || url.includes('/job-email')) {
+      const analysis = analyzeJobEmailInJs(body || {});
+      return sendJson(res, 200, {
+        success: true,
+        analysis
       });
     }
 

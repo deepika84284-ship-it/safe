@@ -91,6 +91,18 @@ apiRouter.get('/reports/public', getRecentPublicReports);
 // Safety Tips
 apiRouter.get('/safety-tips', getSafetyTips);
 
+import { analyzeJobScamEmail } from './services/jobScamAnalyzer';
+
+// Job Scam Email Scanner Routes
+apiRouter.post('/scam/job-email', scanLimiter, (req, res) => {
+  const analysis = analyzeJobScamEmail(req.body || {});
+  res.json({ success: true, analysis });
+});
+apiRouter.post('/scams/job-email', scanLimiter, (req, res) => {
+  const analysis = analyzeJobScamEmail(req.body || {});
+  res.json({ success: true, analysis });
+});
+
 // AI Fraud Assistant & Message Auditor Routes
 apiRouter.post('/ai/chat', chatWithAiAssistant);
 apiRouter.post('/ai/analyze-message', analyzeSuspiciousMessage);
