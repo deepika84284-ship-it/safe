@@ -1408,10 +1408,27 @@ function analyzeJobEmailInJs(input) {
   }
 
   const feeKeywords = ['registration fee', 'processing fee', 'processing charge', 'security deposit', 'refundable deposit', 'laptop fee', 'training fee', 'interview charge', 'pay rs', 'pay $'];
-  const matchedFees = feeKeywords.filter((k) => lowerContent.includes(k));
-  if (matchedFees.length > 0) {
-    redFlags.push(`Demands advance payment for recruitment (${matchedFees.join(', ')})`);
+  let actualFeeDemands = [];
+  let isFeeNegated = false;
+
+  for (const k of feeKeywords) {
+    const idx = lowerContent.indexOf(k);
+    if (idx !== -1) {
+      const precedingText = lowerContent.substring(Math.max(0, idx - 45), idx);
+      if (/never\s+charges?|does\s+not\s+charge|no\s+fee|free\s+of\s+cost|never\s+asks?|does\s+not\s+ask/i.test(precedingText)) {
+        isFeeNegated = true;
+      } else {
+        actualFeeDemands.push(k);
+      }
+    }
+  }
+
+  if (actualFeeDemands.length > 0) {
+    redFlags.push(`Demands advance payment for recruitment (${actualFeeDemands.join(', ')})`);
     riskScore += 65;
+  } else if (isFeeNegated) {
+    positiveIndicators.push('Explicitly clarifies that employer never demands recruitment/registration fees');
+    riskScore -= 10;
   }
 
   const credentialKeywords = ['bank account password', 'upi pin', 'otp', 'net banking password', 'credit card details', 'cvv'];
@@ -1423,17 +1440,17 @@ function analyzeJobEmailInJs(input) {
 
   if (/earn\s+(\$|rs\.?)\s?\d{3,}/i.test(lowerContent) || /daily income|work from home typing|data entry rs|no interview required|instant selection letter/i.test(lowerContent)) {
     redFlags.push('Promises unrealistic daily income or instant selection without formal technical interview');
-    riskScore += 35;
+    riskScore += 25;
   }
 
   if (isPublicProvider && (company || isImpersonatingEnterprise)) {
-    redFlags.push(`Recruiter email uses free public domain (@${senderDomain}) instead of official company domain for ${matchedEnterpriseName || company || 'enterprise'}`);
-    riskScore += 40;
+    redFlags.push(`Recruiter email uses free public domain (@${senderDomain}) instead of official corporate domain for ${matchedEnterpriseName || company || 'enterprise'}`);
+    riskScore += 35;
   }
 
   if (/telegram|wa\.me|whatsapp interview|chat interview/i.test(lowerContent)) {
     redFlags.push('Directs candidate to Telegram or WhatsApp for confidential interview or offer processing');
-    riskScore += 25;
+    riskScore += 20;
   }
 
   if (isVerifiedCorporateDomain) {
@@ -1476,7 +1493,7 @@ function analyzeJobEmailInJs(input) {
     verdictTamil,
     riskScore,
     threatLevel,
-    scamCategory: matchedFees.length > 0 ? 'Advance Recruitment Fee Scam' : matchedCreds.length > 0 ? 'Credential & OTP Harvesting Trap' : isPublicProvider ? 'HR Domain Impersonation' : 'Job Security Analysis',
+    scamCategory: actualFeeDemands.length > 0 ? 'Advance Recruitment Fee Scam' : matchedCreds.length > 0 ? 'Credential & OTP Harvesting Trap' : isPublicProvider ? 'HR Domain Impersonation' : 'Job Security Analysis',
     redFlags,
     positiveIndicators,
     recommendedActions: [
