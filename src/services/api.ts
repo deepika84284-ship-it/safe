@@ -176,6 +176,28 @@ export const api = {
     return res.data;
   },
 
+  analyzeQr: async (qrText: string) => {
+    const res = await apiClient.post<{
+      success: boolean;
+      analysis: {
+        success: boolean;
+        isUpiQr: boolean;
+        rawUri?: string;
+        parsedDetails?: {
+          payeeVpa: string;
+          payeeName: string;
+          amount: string;
+          currency: string;
+        };
+        vpaAnalysis?: VpaAnalysisResult;
+        verificationVerdict: string;
+        disclaimer: string;
+        error?: string;
+      };
+    }>('/payments/analyze-qr', { qrText });
+    return res.data;
+  },
+
   requestRefund: async (id: string, reason: string) => {
     const res = await apiClient.post<{
       success: boolean;

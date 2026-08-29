@@ -33,8 +33,28 @@ export const GPayEscrowPage: React.FC = () => {
   const { success, error, info } = useToast();
   const [searchParams] = useSearchParams();
 
-  // Tab mode
-  const [activeTab, setActiveTab] = useState<'PAY' | 'VERIFY' | 'VAULT'>('PAY');
+  const [activeTab, setActiveTab] = useState<'PAY' | 'VERIFY' | 'QR' | 'VAULT'>('PAY');
+
+  // QR Code analysis state
+  const [qrInputText, setQrInputText] = useState('upi://pay?pa=store.deals@okaxis&pn=Fashion%20Deals%20Hub&am=500&cu=INR');
+  const [qrAnalysisResult, setQrAnalysisResult] = useState<any>(null);
+  const [isAnalyzingQr, setIsAnalyzingQr] = useState(false);
+
+  const handleAnalyzeQr = async (textToTest?: string) => {
+    const target = textToTest || qrInputText;
+    if (!target.trim()) return;
+    setIsAnalyzingQr(true);
+    try {
+      const res = await api.analyzeQr(target.trim());
+      if (res.success) {
+        setQrAnalysisResult(res.analysis);
+      }
+    } catch (err: any) {
+      error('QR Analysis Failed', err.response?.data?.message || 'Could not parse QR string');
+    } finally {
+      setIsAnalyzingQr(false);
+    }
+  };
 
   // Payment Form States
   const initialDomain = searchParams.get('domain') || 'instagram-deals.shop';
@@ -286,6 +306,18 @@ export const GPayEscrowPage: React.FC = () => {
           >
             <Search className="w-4 h-4" />
             <span>{language === 'ta' ? 'UPI ID சரிபார்ப்பு' : 'Verify UPI ID'}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('QR')}
+            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'QR'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/40'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>QR Code Analysis</span>
           </button>
 
           <button
@@ -720,7 +752,130 @@ export const GPayEscrowPage: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 3: MY GPAY ESCROW VAULT & 1-CLICK REFUNDS */}
+        {/* TAB 3: QR CODE ANALYSIS */}
+        {activeTab === 'QR' && (
+          <div className="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+              <div className="p-2.5 rounded-2xl bg-purple-950/80 border border-purple-500/40 text-purple-400">
+                <QrCode className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-white uppercase tracking-tight">
+                  UPI Payment QR Code Decoder & Anti-Fraud Audit
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Parse payee VPA (pa), merchant name (pn), and requested amount (am) from any UPI QR URI string.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1.5">
+                  UPI QR URI / Scanned String
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={qrInputText}
+                    onChange={(e) => setQrInputText(e.target.value)}
+                    placeholder="e.g. upi://pay?pa=store@okaxis&pn=StoreName&am=500&cu=INR"
+                    className="w-full pl-4 pr-32 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
+                  />
+                  <button
+                    onClick={() => handleAnalyzeQr()}
+                    disabled={isAnalyzingQr || !qrInputText.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {isAnalyzingQr ? 'Decoding...' : 'Analyze QR'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Sample QR strings */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Test QR Payload Samples:</span>
+                <button
+                  onClick={() => {
+                    const sample = 'upi://pay?pa=store.deals@okaxis&pn=Fashion%20Deals%20Hub&am=500&cu=INR';
+                    setQrInputText(sample);
+                    handleAnalyzeQr(sample);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[11px] cursor-pointer"
+                >
+                  Unverified Store QR (₹500)
+                </button>
+                <button
+                  onClick={() => {
+                    const sample = 'upi://pay?pa=nikedeals@okaxis&pn=Nike%20Deals%20Fake&am=1499&cu=INR';
+                    setQrInputText(sample);
+                    handleAnalyzeQr(sample);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 font-mono text-[11px] cursor-pointer"
+                >
+                  Blacklisted Scammer QR (₹1499)
+                </button>
+              </div>
+
+              {/* QR Analysis Result Card */}
+              {qrAnalysisResult && (
+                <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 font-mono text-xs">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <span className="font-bold text-slate-300 flex items-center gap-2">
+                      <QrCode className="w-4 h-4 text-purple-400" />
+                      <span>Decoded QR Details</span>
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                        qrAnalysisResult.verificationVerdict === 'CONFIRMED_SCAM'
+                          ? 'bg-red-950 text-red-400 border-red-500/40'
+                          : 'bg-slate-900 text-slate-300 border-slate-700'
+                      }`}
+                    >
+                      {qrAnalysisResult.verificationVerdict === 'CONFIRMED_SCAM'
+                        ? '🔴 CONFIRMED FRAUD'
+                        : '⚪ UNABLE TO VERIFY'}
+                    </span>
+                  </div>
+
+                  {qrAnalysisResult.parsedDetails && (
+                    <div className="grid grid-cols-2 gap-3 text-slate-300">
+                      <div>
+                        <strong className="text-slate-400">Payee VPA (pa):</strong>
+                        <div className="text-white font-bold">{qrAnalysisResult.parsedDetails.payeeVpa || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <strong className="text-slate-400">Payee Name (pn):</strong>
+                        <div className="text-white font-bold">{qrAnalysisResult.parsedDetails.payeeName || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <strong className="text-slate-400">Requested Amount (am):</strong>
+                        <div className="text-white font-bold">₹{qrAnalysisResult.parsedDetails.amount || '0'}</div>
+                      </div>
+                      <div>
+                        <strong className="text-slate-400">Currency (cu):</strong>
+                        <div className="text-white font-bold">{qrAnalysisResult.parsedDetails.currency || 'INR'}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                    <strong className="text-slate-200 uppercase font-black tracking-wider text-[10px] block">
+                      Verification Verdict:
+                    </strong>
+                    <p>{qrAnalysisResult.vpaAnalysis?.trustVerdict || 'No verified corporate match. Exercise caution.'}</p>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500">
+                    {qrAnalysisResult.disclaimer}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: MY GPAY ESCROW VAULT & 1-CLICK REFUNDS */}
         {activeTab === 'VAULT' && (
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-3xl bg-slate-900 border border-slate-800">

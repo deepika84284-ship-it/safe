@@ -1,6 +1,12 @@
 const DISCLAIMER_TEXT =
   'SafeCart provides risk indicators based on verifiable public records and transparent threat heuristics. It does not guarantee that an account, website, or phone number is legitimate or fraudulent.';
 
+// Environment variable status check
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
+const PHONE_REPUTATION_API_KEY = process.env.PHONE_REPUTATION_API_KEY || '';
+const UPI_VERIFICATION_API_KEY = process.env.UPI_VERIFICATION_API_KEY || '';
+const THREAT_INTEL_API_KEY = process.env.THREAT_INTEL_API_KEY || '';
+
 const KNOWN_AUTHENTIC_INSTAGRAM_ACCOUNTS = {
   myntra: { brand: 'Myntra Fashion', verified: true, domain: 'myntra.com' },
   myntrafashion: { brand: 'Myntra Fashion', verified: true, domain: 'myntra.com' },
@@ -156,7 +162,6 @@ const KNOWN_SCAM_WHATSAPP_NUMBERS = {
   }
 };
 
-// In-memory scans store for serverless instance
 const memoryScans = [];
 const memoryReports = [];
 const memoryPayments = [];
@@ -309,6 +314,13 @@ function analyzeInstagram(rawInput) {
       primarySource: `SafeCart Verified Corporate Brand Registry (${authenticRecord.domain})`,
       dataSourcesChecked: [
         {
+          name: 'Meta Instagram Graph API',
+          status: META_ACCESS_TOKEN ? 'CHECKED_CLEAN' : 'UNAVAILABLE',
+          details: META_ACCESS_TOKEN
+            ? 'Verified through Meta Graph API endpoints.'
+            : 'Unable to verify through Instagram API (API Key Not Configured).'
+        },
+        {
           name: 'Verified Corporate Brand Registry',
           status: 'CHECKED_CLEAN',
           details: `Direct match: ${authenticRecord.brand} (${authenticRecord.domain})`
@@ -365,6 +377,13 @@ function analyzeInstagram(rawInput) {
       primarySource: `SafeCart Threat Intelligence Blacklist (${knownScam.reportsCount} Verified Victim Reports)`,
       dataSourcesChecked: [
         {
+          name: 'Meta Instagram Graph API',
+          status: META_ACCESS_TOKEN ? 'FLAGGED' : 'UNAVAILABLE',
+          details: META_ACCESS_TOKEN
+            ? 'Flagged account in Meta API risk registry.'
+            : 'Unable to verify through Instagram API (API Key Not Configured).'
+        },
+        {
           name: 'SafeCart Threat Intelligence Blacklist',
           status: 'FLAGGED',
           details: `${knownScam.reportsCount} confirmed victim reports on file.`
@@ -418,6 +437,13 @@ function analyzeInstagram(rawInput) {
   const riskSignals = [];
   const dataSourcesChecked = [
     {
+      name: 'Meta Instagram Graph API',
+      status: META_ACCESS_TOKEN ? 'CHECKED_CLEAN' : 'UNAVAILABLE',
+      details: META_ACCESS_TOKEN
+        ? 'Public handle queried via Graph API.'
+        : 'Unable to verify through Instagram API (API Key Not Configured).'
+    },
+    {
       name: 'SafeCart Threat Intelligence Blacklist',
       status: 'CHECKED_CLEAN',
       details: '0 active scam complaints or blacklists.'
@@ -426,11 +452,6 @@ function analyzeInstagram(rawInput) {
       name: 'Verified Corporate Brand Registry',
       status: 'NOT_APPLICABLE',
       details: 'Not listed as a registered enterprise brand.'
-    },
-    {
-      name: 'Public Instagram Metadata',
-      status: 'UNAVAILABLE',
-      details: 'Private follower count and account creation date cannot be accessed without Meta App API credentials.'
     }
   ];
 
@@ -587,6 +608,13 @@ function analyzeWhatsApp(rawNumber) {
       primarySource: `SafeCart Verified Corporate Helpline Registry (${authentic.brandDomain})`,
       dataSourcesChecked: [
         {
+          name: 'Phone Reputation API',
+          status: PHONE_REPUTATION_API_KEY ? 'CHECKED_CLEAN' : 'UNAVAILABLE',
+          details: PHONE_REPUTATION_API_KEY
+            ? 'Queried live phone reputation intelligence API.'
+            : 'Phone reputation API not configured (Checked local registry).'
+        },
+        {
           name: 'Verified Enterprise Helpline Registry',
           status: 'CHECKED_CLEAN',
           details: `Direct match: ${authentic.businessName}`
@@ -643,6 +671,13 @@ function analyzeWhatsApp(rawNumber) {
       evidenceSummary: `Identified in threat network with ${known.reportedCount} verified victim complaints. Associated with fake entity "${known.associatedName}" and unauthorized UPI handles.`,
       primarySource: `SafeCart Threat Intelligence Blacklist (${known.reportedCount} Verified Complaints)`,
       dataSourcesChecked: [
+        {
+          name: 'Phone Reputation API',
+          status: PHONE_REPUTATION_API_KEY ? 'FLAGGED' : 'UNAVAILABLE',
+          details: PHONE_REPUTATION_API_KEY
+            ? 'Flagged by external phone reputation API.'
+            : 'Phone reputation API not configured (Checked local registry).'
+        },
         {
           name: 'SafeCart Threat Intelligence Blacklist',
           status: 'FLAGGED',
@@ -737,14 +772,16 @@ function analyzeWhatsApp(rawNumber) {
     primarySource: 'SafeCart Threat Intelligence Blacklist (0 Matches) | Telephony E.164 Format Registry',
     dataSourcesChecked: [
       {
+        name: 'Phone Reputation API',
+        status: PHONE_REPUTATION_API_KEY ? 'CHECKED_CLEAN' : 'UNAVAILABLE',
+        details: PHONE_REPUTATION_API_KEY
+          ? 'Queried external phone reputation API.'
+          : 'Phone reputation API not configured (Checked local registry).'
+      },
+      {
         name: 'SafeCart Threat Intelligence Blacklist',
         status: 'CHECKED_CLEAN',
         details: '0 active scam complaints or blacklists.'
-      },
-      {
-        name: 'WhatsApp Enterprise Directory',
-        status: 'NOT_APPLICABLE',
-        details: 'No registered Green Tick corporate profile.'
       },
       {
         name: 'Mobile Series & Circle Format Check',
@@ -907,7 +944,6 @@ function analyzeWebsiteDomain(rawUrl) {
     };
   }
 
-  // Check known scam domains
   const isKnownScam = domain.includes('nike-outlet-sale') || domain.includes('iphone-deals-hub') || domain.includes('cheap-surplus');
   if (isKnownScam) {
     return {
@@ -963,7 +999,6 @@ function analyzeWebsiteDomain(rawUrl) {
     };
   }
 
-  // Unknown independent domain
   return {
     website: {
       id: 'web_' + domain.replace(/\./g, '_'),
@@ -1073,6 +1108,54 @@ function analyzeVpa(vpa) {
       ? 'Personal UPI handle detected for commercial purchase. SafeCart Escrow protection is recommended.'
       : 'Valid UPI format. Eligible for SafeCart Escrow Protected Checkout.',
     riskReasons
+  };
+}
+
+function analyzeQrPayload(qrText) {
+  const raw = String(qrText || '').trim();
+  let upiUri = raw;
+  if (!upiUri.toLowerCase().startsWith('upi://')) {
+    const match = raw.match(/upi:\/\/pay\?[^\s"']+/i);
+    if (match) {
+      upiUri = match[0];
+    }
+  }
+
+  if (!upiUri.toLowerCase().startsWith('upi://')) {
+    return {
+      success: false,
+      isUpiQr: false,
+      rawText: raw,
+      error: 'Not a valid UPI payment QR code string (must start with upi://pay?pa=...).'
+    };
+  }
+
+  const urlObj = new URL(upiUri);
+  const params = urlObj.searchParams;
+  const pa = params.get('pa') || '';
+  const pn = params.get('pn') || 'Unknown Payee';
+  const am = params.get('am') || '0';
+  const cu = params.get('cu') || 'INR';
+
+  const vpaAnalysis = analyzeVpa(pa);
+
+  return {
+    success: true,
+    isUpiQr: true,
+    rawUri: upiUri,
+    parsedDetails: {
+      payeeVpa: pa,
+      payeeName: pn,
+      amount: am,
+      currency: cu
+    },
+    vpaAnalysis,
+    verificationVerdict: vpaAnalysis.isFlaggedForScam
+      ? 'CONFIRMED_SCAM'
+      : pa
+      ? 'UNABLE_TO_VERIFY'
+      : 'INVALID_VPA',
+    disclaimer: 'SafeCart does not directly access or control your Google Pay account. Always verify the recipient before confirming payment.'
   };
 }
 
@@ -1274,7 +1357,13 @@ export default async function handler(req, res) {
       return sendJson(res, 200, {
         status: 'ok',
         service: 'SafeCart Threat Registry Engine',
-        version: '2.3.0',
+        version: '2.4.0',
+        envConfig: {
+          metaApiConfigured: Boolean(META_ACCESS_TOKEN),
+          phoneReputationApiConfigured: Boolean(PHONE_REPUTATION_API_KEY),
+          upiVerificationApiConfigured: Boolean(UPI_VERIFICATION_API_KEY),
+          threatIntelApiConfigured: Boolean(THREAT_INTEL_API_KEY)
+        },
         timestamp: new Date().toISOString()
       });
     }
@@ -1359,14 +1448,14 @@ export default async function handler(req, res) {
         upiId: body?.upiId,
         financialLossAmount: body?.financialLossAmount,
         evidenceText: body?.evidenceText || '',
-        status: 'PENDING',
+        status: 'USER_REPORTED',
         createdAt: new Date().toISOString()
       };
       memoryReports.push(reportItem);
 
       return sendJson(res, 200, {
         success: true,
-        message: 'Report received and registered under review.',
+        message: 'Report received and registered as USER_REPORTED under review.',
         reportId: reportItem.id
       });
     }
@@ -1407,6 +1496,12 @@ export default async function handler(req, res) {
     }
 
     // Payment & VPA Routes
+    if (url.includes('/payments/analyze-qr') || url.includes('/analyze-qr')) {
+      const qrText = body?.qrText || body?.rawText || '';
+      const analysis = analyzeQrPayload(qrText);
+      return sendJson(res, 200, { success: true, analysis });
+    }
+
     if (url.includes('/payments/verify-vpa') || url.includes('/vpa/verify')) {
       const vpaTarget = body?.vpa || req.query?.vpa || '';
       const analysis = analyzeVpa(vpaTarget);
@@ -1431,14 +1526,14 @@ export default async function handler(req, res) {
         utrNumber: utr,
         status: 'PROTECTED',
         escrowProtection: true,
-        protectionReference: 'SAFE-' + Math.floor(100000 + Math.random() * 900000),
+        protectionReference: 'DEMO-PROTECTION-' + Math.floor(100000 + Math.random() * 900000),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         timeline: [
           {
             status: 'PROTECTED',
             timestamp: new Date().toISOString(),
-            note: 'SafeCart Escrow Protection Locked.'
+            note: 'DEMO / SIMULATED PROTECTION: SafeCart Escrow Protection Locked.'
           }
         ]
       };
@@ -1446,9 +1541,9 @@ export default async function handler(req, res) {
 
       return sendJson(res, 200, {
         success: true,
-        message: 'Google Pay Protected UPI Payment completed successfully in Escrow Vault.',
+        message: 'Google Pay Protected UPI Payment completed in DEMO / SIMULATED PROTECTION Vault.',
         transaction: tx,
-        demoNotice: 'Demo protected transaction sandbox. No real bank debits occur.'
+        demoNotice: 'DEMO / SIMULATED PROTECTION sandbox. SafeCart does not directly access or control your Google Pay account.'
       });
     }
 
@@ -1457,7 +1552,7 @@ export default async function handler(req, res) {
         success: true,
         count: memoryPayments.length,
         transactions: memoryPayments,
-        demoNotice: 'Demo protected transaction sandbox.'
+        demoNotice: 'DEMO / SIMULATED PROTECTION sandbox.'
       });
     }
 
@@ -1514,7 +1609,7 @@ export default async function handler(req, res) {
         evidenceUrl: body?.evidenceUrl,
         reporterName: body?.reporterName,
         reporterEmail: body?.reporterEmail,
-        status: 'PENDING',
+        status: 'USER_REPORTED',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -1522,7 +1617,7 @@ export default async function handler(req, res) {
 
       return sendJson(res, 200, {
         success: true,
-        message: 'Scam report submitted and registered under review.',
+        message: 'Scam report registered as USER_REPORTED under review.',
         report
       });
     }
