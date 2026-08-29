@@ -22,9 +22,13 @@ export const LoginPage: React.FC = () => {
 
     if (res.success) {
       success('Welcome back!', 'Successfully signed in to SafeCart.');
-      navigate('/dashboard');
+      if (res.user?.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
-      error('Authentication Failed', res.message);
+      error('Authentication Failed', res.message || 'Invalid email or password.');
     }
   };
 

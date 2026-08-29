@@ -42,8 +42,28 @@ export class DataStore {
     const adminPassHash = bcrypt.hashSync('Admin@123456', salt);
     const userPassHash = bcrypt.hashSync('User@123456', salt);
     const ramyaPassHash = bcrypt.hashSync('ramya200', salt);
+    const demoConsumerHash = bcrypt.hashSync('User123!', salt);
+    const demoAdminHash = bcrypt.hashSync('Admin123!', salt);
 
     // 1. Pre-seeded Users
+    const demoConsumer: User = {
+      id: 'usr_consumer_demo',
+      name: 'SafeCart Demo Consumer',
+      email: 'user@safecart.local',
+      passwordHash: demoConsumerHash,
+      role: 'USER',
+      createdAt: '2025-01-01T00:00:00.000Z'
+    };
+
+    const demoAdmin: User = {
+      id: 'usr_admin_demo',
+      name: 'SafeCart Demo Administrator',
+      email: 'admin@safecart.local',
+      passwordHash: demoAdminHash,
+      role: 'ADMIN',
+      createdAt: '2025-01-01T00:00:00.000Z'
+    };
+
     const adminUser: User = {
       id: 'usr_admin_01',
       name: 'Cyber Security Admin',
@@ -71,6 +91,8 @@ export class DataStore {
       createdAt: '2025-02-15T14:30:00.000Z'
     };
 
+    this.users.set(demoConsumer.id, demoConsumer);
+    this.users.set(demoAdmin.id, demoAdmin);
     this.users.set(adminUser.id, adminUser);
     this.users.set(ramyaAdmin.id, ramyaAdmin);
     this.users.set(regularUser.id, regularUser);

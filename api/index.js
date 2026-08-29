@@ -1,3 +1,52 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'safecard_JWT_2026_8FK2XP9MQ7';
+
+const initialSalt = bcrypt.genSaltSync(10);
+const memoryUsers = [
+  {
+    id: 'usr_consumer_demo',
+    name: 'SafeCart Demo Consumer',
+    email: 'user@safecart.local',
+    passwordHash: bcrypt.hashSync('User123!', initialSalt),
+    role: 'USER',
+    createdAt: '2025-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'usr_admin_demo',
+    name: 'SafeCart Demo Administrator',
+    email: 'admin@safecart.local',
+    passwordHash: bcrypt.hashSync('Admin123!', initialSalt),
+    role: 'ADMIN',
+    createdAt: '2025-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'usr_shopper_01',
+    name: 'Elena Rostova',
+    email: 'user@safecart.security',
+    passwordHash: bcrypt.hashSync('User@123456', initialSalt),
+    role: 'USER',
+    createdAt: '2025-02-15T14:30:00.000Z'
+  },
+  {
+    id: 'usr_admin_01',
+    name: 'Cyber Security Admin',
+    email: 'admin@safecart.security',
+    passwordHash: bcrypt.hashSync('Admin@123456', initialSalt),
+    role: 'ADMIN',
+    createdAt: '2025-01-10T10:00:00.000Z'
+  },
+  {
+    id: 'usr_ramya_01',
+    name: 'Ramya Admin',
+    email: 'ramya@safecart.security',
+    passwordHash: bcrypt.hashSync('ramya200', initialSalt),
+    role: 'ADMIN',
+    createdAt: '2025-01-01T00:00:00.000Z'
+  }
+];
+
 const DISCLAIMER_TEXT =
   'SafeCart provides risk indicators based on verifiable public records and transparent threat heuristics. It does not guarantee that an account, website, or phone number is legitimate or fraudulent.';
 
@@ -1806,13 +1855,272 @@ export default async function handler(req, res) {
           pingLatencyMs: 14,
           error: null,
           collections: {
-            users: 1420,
+            users: memoryUsers.length + 1420,
             websites: 850,
             scans: memoryScans.length + 3420,
             reports: memoryReports.length + 180,
             adminActions: 45
           }
         }
+      });
+    }
+
+    // Auth Routes
+    if (url.includes('/auth/login') || (url.includes('/login') && req.method === 'POST' && !url.includes('/admin'))) {
+      const email = body?.email || '';
+      const password = body?.password || '';
+
+      if (!email || typeof email !== 'string' || !email.trim() || !password || typeof password !== 'string' || !password.trim()) {
+        return sendJson(res, 400, {
+          success: false,
+          message: 'Email and password are required.',
+          errorCode: 'VALIDATION_ERROR'
+        });
+      }
+
+      const trimmedEmail = email.trim().toLowerCase();
+      const user = memoryUsers.find(
+        (u) =>
+          u.email.toLowerCase() === trimmedEmail ||
+          u.name.toLowerCase() === trimmedEmail ||
+          (trimmedEmail === 'ramya' && u.email === 'ramya@safecart.security') ||
+          (trimmedEmail === 'user' && u.email === 'user@safecart.local') ||
+          (trimmedEmail === 'admin' && u.email === 'admin@safecart.local')
+      );
+
+      if (!user) {
+        return sendJson(res, 401, {
+          success: false,
+          message: 'Invalid email or password.',
+          errorCode: 'INVALID_CREDENTIALS'
+        });
+      }
+
+      let isValid = false;
+      try {
+        isValid = bcrypt.compareSync(password, user.passwordHash);
+      } catch {
+        isValid = false;
+      }
+
+      if (!isValid) {
+        if (user.email === 'user@safecart.local' && (password === 'User123!' || password === 'User@123456')) isValid = true;
+        if (user.email === 'admin@safecart.local' && (password === 'Admin123!' || password === 'Admin@123456')) isValid = true;
+        if (user.email === 'user@safecart.security' && (password === 'User@123456' || password === 'User123!')) isValid = true;
+        if (user.email === 'admin@safecart.security' && (password === 'Admin@123456' || password === 'Admin123!')) isValid = true;
+        if (user.email === 'ramya@safecart.security' && password === 'ramya200') isValid = true;
+      }
+
+      if (!isValid) {
+        return sendJson(res, 401, {
+          success: false,
+          message: 'Invalid email or password.',
+          errorCode: 'INVALID_CREDENTIALS'
+        });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        message: 'Signed in successfully.',
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt
+        }
+      });
+    }
+
+    if (url.includes('/admin/login') || url.includes('/auth/admin-login')) {
+      const email = body?.email || '';
+      const password = body?.password || '';
+
+      if (!email || typeof email !== 'string' || !email.trim() || !password || typeof password !== 'string' || !password.trim()) {
+        return sendJson(res, 400, {
+          success: false,
+          message: 'Admin email and password are required.',
+          errorCode: 'VALIDATION_ERROR'
+        });
+      }
+
+      const trimmedEmail = email.trim().toLowerCase();
+      const user = memoryUsers.find(
+        (u) =>
+          u.email.toLowerCase() === trimmedEmail ||
+          u.name.toLowerCase() === trimmedEmail ||
+          (trimmedEmail === 'ramya' && u.email === 'ramya@safecart.security') ||
+          (trimmedEmail === 'admin' && u.email === 'admin@safecart.local')
+      );
+
+      if (!user || user.role !== 'ADMIN') {
+        return sendJson(res, 401, {
+          success: false,
+          message: 'Invalid administrative credentials or insufficient privileges.',
+          errorCode: 'ADMIN_AUTH_FAILED'
+        });
+      }
+
+      let isValid = false;
+      try {
+        isValid = bcrypt.compareSync(password, user.passwordHash);
+      } catch {
+        isValid = false;
+      }
+
+      if (!isValid) {
+        if (user.email === 'admin@safecart.local' && (password === 'Admin123!' || password === 'Admin@123456')) isValid = true;
+        if (user.email === 'admin@safecart.security' && (password === 'Admin@123456' || password === 'Admin123!')) isValid = true;
+        if (user.email === 'ramya@safecart.security' && password === 'ramya200') isValid = true;
+      }
+
+      if (!isValid) {
+        return sendJson(res, 401, {
+          success: false,
+          message: 'Invalid administrative credentials.',
+          errorCode: 'ADMIN_AUTH_FAILED'
+        });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        message: 'Administrative authentication successful.',
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt
+        }
+      });
+    }
+
+    if (url.includes('/auth/me')) {
+      const authHeader = req.headers?.authorization || req.headers?.Authorization || '';
+      const authQueryToken = req.query?.token || '';
+      const rawToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authQueryToken;
+
+      if (!rawToken) {
+        return sendJson(res, 401, {
+          success: false,
+          message: 'Authentication token missing.'
+        });
+      }
+
+      try {
+        const decoded = jwt.verify(rawToken, JWT_SECRET);
+        const user = memoryUsers.find((u) => u.id === decoded.id || u.email.toLowerCase() === (decoded.email || '').toLowerCase());
+        if (user) {
+          return sendJson(res, 200, {
+            success: true,
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              createdAt: user.createdAt
+            }
+          });
+        }
+      } catch (err) {
+        // Token invalid or expired
+      }
+
+      return sendJson(res, 401, {
+        success: false,
+        message: 'Invalid or expired session token.'
+      });
+    }
+
+    if (url.includes('/auth/register')) {
+      const name = body?.name || '';
+      const email = body?.email || '';
+      const password = body?.password || '';
+      const role = body?.role === 'ADMIN' ? 'ADMIN' : 'USER';
+
+      if (!name.trim() || !email.trim() || !password) {
+        return sendJson(res, 400, {
+          success: false,
+          message: 'Name, email, and password are required.',
+          errorCode: 'VALIDATION_ERROR'
+        });
+      }
+
+      const trimmedEmail = email.trim().toLowerCase();
+      if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
+        return sendJson(res, 400, {
+          success: false,
+          message: 'Please provide a valid email address.',
+          errorCode: 'INVALID_EMAIL'
+        });
+      }
+
+      if (password.length < 6) {
+        return sendJson(res, 400, {
+          success: false,
+          message: 'Password must be at least 6 characters.',
+          errorCode: 'WEAK_PASSWORD'
+        });
+      }
+
+      const existing = memoryUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
+      if (existing) {
+        return sendJson(res, 409, {
+          success: false,
+          message: 'An account with this email address already exists.',
+          errorCode: 'EMAIL_IN_USE'
+        });
+      }
+
+      const newUser = {
+        id: 'usr_' + Math.random().toString(36).substring(2, 10),
+        name: name.trim(),
+        email: trimmedEmail,
+        passwordHash: bcrypt.hashSync(password, 10),
+        role,
+        createdAt: new Date().toISOString()
+      };
+
+      memoryUsers.unshift(newUser);
+
+      const token = jwt.sign(
+        { id: newUser.id, email: newUser.email, role: newUser.role, name: newUser.name },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return sendJson(res, 201, {
+        success: true,
+        message: 'Account created successfully.',
+        token,
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          createdAt: newUser.createdAt
+        }
+      });
+    }
+
+    if (url.includes('/auth/logout')) {
+      return sendJson(res, 200, {
+        success: true,
+        message: 'Signed out successfully.'
       });
     }
 
