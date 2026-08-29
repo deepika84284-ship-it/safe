@@ -213,7 +213,7 @@ export async function analyzeWebsite(options: AnalyzeUrlOptions): Promise<{
   await db.saveWebsite(updatedWebsite);
 
   // 8. Create Scan Result Record
-  const scanId = 'scan_' + Math.random().toString(36).substring(2, 10);
+  const scanId = 'scan_' + domain.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
   const scanResult: ScanResult = {
     id: scanId,
     userId,

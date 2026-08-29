@@ -33,17 +33,50 @@ export async function createScan(req: AuthRequest, res: Response) {
   }
 }
 
+function decodeDomainFromScanId(rawId: string): string {
+  let cleaned = String(rawId || '').trim();
+  if (cleaned.startsWith('scan_')) {
+    cleaned = cleaned.replace(/^scan_/, '');
+  }
+  if (cleaned.includes('.')) {
+    return cleaned.toLowerCase();
+  }
+  if (cleaned.includes('_')) {
+    const lastUnderscore = cleaned.lastIndexOf('_');
+    if (lastUnderscore !== -1) {
+      const namePart = cleaned.substring(0, lastUnderscore);
+      const tldPart = cleaned.substring(lastUnderscore + 1);
+      const domainName = namePart.replace(/_/g, '-');
+      return `${domainName}.${tldPart}`.toLowerCase();
+    }
+  }
+  return cleaned.toLowerCase();
+}
+
 export async function getScanById(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const scan = db.scans.get(id);
+    let scan = db.scans.get(id);
 
     if (!scan) {
-      return res.status(404).json({
-        success: false,
-        message: 'Scan result not found or has expired.',
-        errorCode: 'SCAN_NOT_FOUND'
-      });
+      const domainFromId = decodeDomainFromScanId(id);
+      scan = Array.from(db.scans.values()).find(
+        (s) => s.id === id || s.domain.toLowerCase() === domainFromId.toLowerCase()
+      );
+    }
+
+    if (!scan) {
+      const domainFromId = decodeDomainFromScanId(id);
+      try {
+        const result = await analyzeWebsite({ rawUrl: domainFromId || 'amazon.com' });
+        scan = result.scan;
+      } catch (err: any) {
+        return res.status(404).json({
+          success: false,
+          message: 'Scan result not found or has expired.',
+          errorCode: 'SCAN_NOT_FOUND'
+        });
+      }
     }
 
     const website = db.websites.get(scan.domain);

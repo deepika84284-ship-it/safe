@@ -38,6 +38,26 @@ export const ScanResultPage: React.FC = () => {
   const [isProtectedCheckoutOpen, setIsProtectedCheckoutOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
+function decodeDomainFromId(rawId: string): string {
+  let cleaned = String(rawId || '').trim();
+  if (cleaned.startsWith('scan_')) {
+    cleaned = cleaned.replace(/^scan_/, '');
+  }
+  if (cleaned.includes('.')) {
+    return cleaned.toLowerCase();
+  }
+  if (cleaned.includes('_')) {
+    const lastUnderscore = cleaned.lastIndexOf('_');
+    if (lastUnderscore !== -1) {
+      const namePart = cleaned.substring(0, lastUnderscore);
+      const tldPart = cleaned.substring(lastUnderscore + 1);
+      const domainName = namePart.replace(/_/g, '-');
+      return `${domainName}.${tldPart}`.toLowerCase();
+    }
+  }
+  return cleaned.toLowerCase();
+}
+
   useEffect(() => {
     const fetchScan = async () => {
       if (!id) return;
@@ -49,10 +69,28 @@ export const ScanResultPage: React.FC = () => {
           setScan(res.scan);
           setWebsite(res.website);
         } else {
-          setError('Scan report not found.');
+          const domainFromId = decodeDomainFromId(id);
+          const fallbackRes = await api.scanWebsite(domainFromId || 'amazon.com');
+          if (fallbackRes.success && fallbackRes.scan) {
+            setScan(fallbackRes.scan);
+            setWebsite(fallbackRes.website);
+          } else {
+            setError('Scan report not found.');
+          }
         }
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to load scan result.');
+        try {
+          const domainFromId = decodeDomainFromId(id);
+          const fallbackRes = await api.scanWebsite(domainFromId || 'amazon.com');
+          if (fallbackRes.success && fallbackRes.scan) {
+            setScan(fallbackRes.scan);
+            setWebsite(fallbackRes.website);
+          } else {
+            setError(err.response?.data?.message || 'Failed to load scan result.');
+          }
+        } catch {
+          setError('Failed to load scan result.');
+        }
       } finally {
         setLoading(false);
       }

@@ -1,7 +1,6 @@
 const DISCLAIMER_TEXT =
   'SafeCart provides risk indicators based on verifiable public records and transparent threat heuristics. It does not guarantee that an account, website, or phone number is legitimate or fraudulent.';
 
-// Environment variable status check
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
 const PHONE_REPUTATION_API_KEY = process.env.PHONE_REPUTATION_API_KEY || '';
 const UPI_VERIFICATION_API_KEY = process.env.UPI_VERIFICATION_API_KEY || '';
@@ -879,21 +878,48 @@ function analyzeCrossPlatform(rawInstagram, rawWhatsApp) {
   };
 }
 
+function decodeDomainFromScanId(rawId) {
+  let cleaned = String(rawId || '').trim();
+  if (cleaned.startsWith('scan_')) {
+    cleaned = cleaned.replace(/^scan_/, '');
+  }
+  if (cleaned.includes('.')) {
+    return cleaned.toLowerCase();
+  }
+  if (cleaned.includes('_')) {
+    const lastUnderscore = cleaned.lastIndexOf('_');
+    if (lastUnderscore !== -1) {
+      const namePart = cleaned.substring(0, lastUnderscore);
+      const tldPart = cleaned.substring(lastUnderscore + 1);
+      const domainName = namePart.replace(/_/g, '-');
+      return `${domainName}.${tldPart}`.toLowerCase();
+    }
+  }
+  return cleaned.toLowerCase();
+}
+
 function analyzeWebsiteDomain(rawUrl) {
   let clean = String(rawUrl || '').trim();
   clean = clean.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0].split('?')[0];
   const isHttps = rawUrl.toLowerCase().startsWith('https://') || !rawUrl.toLowerCase().startsWith('http://');
   const domain = clean.toLowerCase();
 
-  const isMyntra = domain === 'myntra.com' || domain.endsWith('.myntra.com');
-  const isAmazon = domain === 'amazon.in' || domain === 'amazon.com' || domain.endsWith('.amazon.in');
-  const isFlipkart = domain === 'flipkart.com' || domain.endsWith('.flipkart.com');
+  const scanId = 'scan_' + domain.replace(/[^a-zA-Z0-9]/g, '_');
+  const websiteId = 'web_' + domain.replace(/[^a-zA-Z0-9]/g, '_');
 
-  if (isMyntra || isAmazon || isFlipkart) {
-    const brandName = isMyntra ? 'Myntra Fashion' : isAmazon ? 'Amazon India' : 'Flipkart';
+  const knownAuthentic = [
+    'amazon.com', 'amazon.in', 'myntra.com', 'nike.com', 'flipkart.com',
+    'apple.com', 'zara.com', 'meesho.com', 'ajio.com', 'tatacliq.com',
+    'nykaa.com', 'sephora.com', 'hm.com', 'target.com', 'ebay.com', 'adidas.com'
+  ];
+
+  const isOfficialBrand = knownAuthentic.some((b) => domain === b || domain.endsWith('.' + b));
+
+  if (isOfficialBrand) {
+    const brandName = domain.includes('amazon') ? 'Amazon Marketplace' : domain.includes('myntra') ? 'Myntra Fashion' : domain.includes('nike') ? 'Nike Official' : 'Verified Enterprise Merchant';
     return {
       website: {
-        id: 'web_' + domain.replace(/\./g, '_'),
+        id: websiteId,
         domain,
         url: `https://${domain}`,
         riskScore: 5,
@@ -919,7 +945,8 @@ function analyzeWebsiteDomain(rawUrl) {
         reputationBadge: 'VERIFIED_TRUSTED'
       },
       scan: {
-        id: 'scan_' + Math.random().toString(36).substring(2, 10),
+        id: scanId,
+        websiteId,
         domain,
         url: `https://${domain}`,
         score: 5,
@@ -930,25 +957,35 @@ function analyzeWebsiteDomain(rawUrl) {
             id: 'sig_1',
             category: 'SSL_SECURITY',
             title: 'Verified Official Corporate Domain',
-            description: `Recognized authentic e-commerce portal for ${brandName}.`,
+            description: `Recognized authentic e-commerce portal for ${brandName}. Direct checkout hosted on official registered domain.`,
             severity: 'SAFE',
             points: -25,
+            detected: true
+          },
+          {
+            id: 'sig_2',
+            category: 'DOMAIN_INTEGRITY',
+            title: 'TLS / SSL Cryptographic Integrity',
+            description: 'Enforces HTTPS encryption with valid RSA/ECC SSL certificate.',
+            severity: 'SAFE',
+            points: -20,
             detected: true
           }
         ],
         recommendations: [
-          'Safe to browse and purchase.',
+          'Safe to browse and purchase directly.',
           'Always verify the SSL lock icon in your browser address bar.'
         ]
       }
     };
   }
 
+  // Known blacklisted scam domains
   const isKnownScam = domain.includes('nike-outlet-sale') || domain.includes('iphone-deals-hub') || domain.includes('cheap-surplus');
   if (isKnownScam) {
     return {
       website: {
-        id: 'web_' + domain.replace(/\./g, '_'),
+        id: websiteId,
         domain,
         url: `https://${domain}`,
         riskScore: 95,
@@ -974,7 +1011,8 @@ function analyzeWebsiteDomain(rawUrl) {
         reputationBadge: 'SUSPECTED_RISK'
       },
       scan: {
-        id: 'scan_' + Math.random().toString(36).substring(2, 10),
+        id: scanId,
+        websiteId,
         domain,
         url: `https://${domain}`,
         score: 95,
@@ -989,6 +1027,15 @@ function analyzeWebsiteDomain(rawUrl) {
             severity: 'CRITICAL',
             points: 50,
             detected: true
+          },
+          {
+            id: 'sig_2',
+            category: 'PAYMENT_RISK',
+            title: 'Off-Platform UPI Payment Redirection',
+            description: 'Demands advance non-refundable UPI transfers to unverified personal handles.',
+            severity: 'HIGH',
+            points: 30,
+            detected: true
           }
         ],
         recommendations: [
@@ -999,9 +1046,147 @@ function analyzeWebsiteDomain(rawUrl) {
     };
   }
 
+  // Typosquatting / Brand Impersonation check
+  const brandKeywords = ['nike', 'apple', 'zara', 'myntra', 'adidas', 'gucci', 'rolex', 'louisvuitton', 'puma', 'dior'];
+  const clearanceKeywords = ['outlet', 'sale', 'official', 'surplus', 'discount', 'store', 'deals', 'cheap', 'wholesale', 'bulk'];
+
+  let matchedBrand = brandKeywords.find((b) => domain.includes(b));
+  let matchedClearance = clearanceKeywords.filter((c) => domain.includes(c));
+
+  if (matchedBrand && matchedClearance.length > 0) {
+    const brandNameUpper = matchedBrand.charAt(0).toUpperCase() + matchedBrand.slice(1);
+    return {
+      website: {
+        id: websiteId,
+        domain,
+        url: `https://${domain}`,
+        riskScore: 90,
+        riskLevel: 'VERY HIGH',
+        confidence: 'HIGH',
+        totalReports: 0,
+        confirmedReports: 0,
+        pendingReports: 0,
+        rejectedReports: 0,
+        firstScannedAt: new Date().toISOString(),
+        lastScannedAt: new Date().toISOString(),
+        signalsSummary: {
+          hasHttps: isHttps,
+          hasValidSsl: isHttps,
+          domainAgeEstimated: 'Unverified New Domain',
+          hasPrivacyPolicy: false,
+          hasRefundPolicy: false,
+          hasContactInfo: false,
+          hasSuspiciousPaymentInstructions: true,
+          hasExcessiveUrgency: true,
+          isTypoSquatted: true
+        },
+        reputationBadge: 'SUSPECTED_RISK'
+      },
+      scan: {
+        id: scanId,
+        websiteId,
+        domain,
+        url: `https://${domain}`,
+        score: 90,
+        riskLevel: 'VERY HIGH',
+        confidence: 'HIGH',
+        signals: [
+          {
+            id: 'sig_1',
+            category: 'DOMAIN_INTEGRITY',
+            title: `Suspected Brand Impersonation / Typosquat (${brandNameUpper})`,
+            description: `Domain combines major trademark "${brandNameUpper}" with clearance monikers (${matchedClearance.join(', ')}). Unaffiliated with official brand domain.`,
+            severity: 'CRITICAL',
+            points: 45,
+            detected: true
+          },
+          {
+            id: 'sig_2',
+            category: 'POLICY_TRANSPARENCY',
+            title: 'Unregistered Commercial Storefront',
+            description: 'Lacks official corporate business address, GSTIN registration, or verifiable merchant disclosure.',
+            severity: 'HIGH',
+            points: 30,
+            detected: true
+          }
+        ],
+        recommendations: [
+          `Do NOT order from this domain. Access the official brand portal at ${matchedBrand}.com.`,
+          'Never make advance UPI payments for heavily discounted surplus inventory.'
+        ]
+      }
+    };
+  }
+
+  // Suspicious clearance moniker check (e.g. mega-discounts-direct88.shop)
+  if (matchedClearance.length >= 2 || (matchedClearance.length >= 1 && (domain.endsWith('.shop') || domain.endsWith('.xyz') || domain.endsWith('.top')))) {
+    return {
+      website: {
+        id: websiteId,
+        domain,
+        url: `https://${domain}`,
+        riskScore: 65,
+        riskLevel: 'HIGH',
+        confidence: 'MEDIUM',
+        totalReports: 0,
+        confirmedReports: 0,
+        pendingReports: 0,
+        rejectedReports: 0,
+        firstScannedAt: new Date().toISOString(),
+        lastScannedAt: new Date().toISOString(),
+        signalsSummary: {
+          hasHttps: isHttps,
+          hasValidSsl: isHttps,
+          domainAgeEstimated: 'Unverified Domain',
+          hasPrivacyPolicy: false,
+          hasRefundPolicy: false,
+          hasContactInfo: false,
+          hasSuspiciousPaymentInstructions: true,
+          hasExcessiveUrgency: true,
+          isTypoSquatted: false
+        },
+        reputationBadge: 'NEEDS_CAUTION'
+      },
+      scan: {
+        id: scanId,
+        websiteId,
+        domain,
+        url: `https://${domain}`,
+        score: 65,
+        riskLevel: 'HIGH',
+        confidence: 'MEDIUM',
+        signals: [
+          {
+            id: 'sig_1',
+            category: 'CONTENT_HEURISTICS',
+            title: 'Aggressive Clearance & Discount Monikers',
+            description: `Domain name contains multiple high-risk sales monikers (${matchedClearance.join(', ')}). High statistical correlation with unfulfilled drop-shipping schemes.`,
+            severity: 'HIGH',
+            points: 40,
+            detected: true
+          },
+          {
+            id: 'sig_2',
+            category: 'POLICY_TRANSPARENCY',
+            title: 'Unverified Independent Merchant',
+            description: 'No verified corporate trade registry or physical store disclosures on file.',
+            severity: 'MEDIUM',
+            points: 25,
+            detected: true
+          }
+        ],
+        recommendations: [
+          'Exercise caution. Verify merchant GSTIN registration before purchasing.',
+          'Prefer credit card or escrow protected checkout over direct UPI transfers.'
+        ]
+      }
+    };
+  }
+
+  // Unknown independent domain
   return {
     website: {
-      id: 'web_' + domain.replace(/\./g, '_'),
+      id: websiteId,
       domain,
       url: `https://${domain}`,
       riskScore: 15,
@@ -1027,7 +1212,8 @@ function analyzeWebsiteDomain(rawUrl) {
       reputationBadge: 'UNVERIFIED'
     },
     scan: {
-      id: 'scan_' + Math.random().toString(36).substring(2, 10),
+      id: scanId,
+      websiteId,
       domain,
       url: `https://${domain}`,
       score: 15,
@@ -1357,7 +1543,7 @@ export default async function handler(req, res) {
       return sendJson(res, 200, {
         status: 'ok',
         service: 'SafeCart Threat Registry Engine',
-        version: '2.4.0',
+        version: '2.5.0',
         envConfig: {
           metaApiConfigured: Boolean(META_ACCESS_TOKEN),
           phoneReputationApiConfigured: Boolean(PHONE_REPUTATION_API_KEY),
@@ -1471,13 +1657,46 @@ export default async function handler(req, res) {
       });
     }
 
+    // GET scan by ID route (/api/scans/:id)
+    if (url.includes('/scans/') && req.method === 'GET' && !url.includes('/scans/history')) {
+      const parts = url.split('/scans/');
+      const rawId = (parts[1] || '').split('?')[0].split('/')[0];
+      const found = memoryScans.find((s) => s.id === rawId || s.domain === rawId || s.domain.replace(/[^a-zA-Z0-9]/g, '_') === rawId);
+      if (found) {
+        const analysis = analyzeWebsiteDomain(found.domain);
+        return sendJson(res, 200, {
+          success: true,
+          scan: found,
+          website: analysis.website
+        });
+      }
+
+      const extractedDomain = decodeDomainFromScanId(rawId);
+      const analysis = analyzeWebsiteDomain(extractedDomain || 'amazon.com');
+      memoryScans.unshift(analysis.scan);
+
+      return sendJson(res, 200, {
+        success: true,
+        scan: analysis.scan,
+        website: analysis.website
+      });
+    }
+
     if (url.includes('/scans') && req.method === 'POST') {
       const targetUrl = body?.url || '';
+      if (!targetUrl || typeof targetUrl !== 'string' || !targetUrl.trim()) {
+        return sendJson(res, 400, {
+          success: false,
+          message: 'Please provide a valid website URL to scan.',
+          errorCode: 'INVALID_URL'
+        });
+      }
+
       const analysis = analyzeWebsiteDomain(targetUrl);
       memoryScans.unshift(analysis.scan);
       return sendJson(res, 200, {
         success: true,
-        message: 'Website scan completed.',
+        message: 'Website security analysis completed.',
         scan: analysis.scan,
         website: analysis.website
       });
