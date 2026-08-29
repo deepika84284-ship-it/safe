@@ -46,9 +46,8 @@ export const LoginPage: React.FC = () => {
     setPassword('User123!');
   };
 
-  const handleFillDemoAdmin = () => {
-    setEmail('admin@safecart.local');
-    setPassword('Admin123!');
+  const handleGoToAdminPortal = () => {
+    navigate('/admin/login');
   };
 
   return (
@@ -71,7 +70,7 @@ export const LoginPage: React.FC = () => {
         <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-lg">
           <div className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5 font-mono">
             <UserCheck className="w-4 h-4 text-blue-400" />
-            <span>Quick Demo Credentials:</span>
+            <span>Quick Demo Login:</span>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <button
@@ -83,10 +82,10 @@ export const LoginPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={handleFillDemoAdmin}
+              onClick={handleGoToAdminPortal}
               className="py-2 px-3 rounded-xl bg-red-950/40 border border-red-800/60 hover:border-red-500 text-[11px] font-black uppercase tracking-wider text-red-400 hover:text-white transition text-center cursor-pointer font-mono"
             >
-              Demo Admin
+              Admin Portal
             </button>
           </div>
         </div>

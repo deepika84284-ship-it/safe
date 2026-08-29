@@ -9,8 +9,8 @@ export const AdminLoginPage: React.FC = () => {
   const { adminLogin } = useAuth();
   const { success, error } = useToast();
 
-  const [email, setEmail] = useState('admin@safecart.local');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {

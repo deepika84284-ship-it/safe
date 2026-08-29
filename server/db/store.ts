@@ -39,73 +39,30 @@ export class DataStore {
 
   private seedInitialData() {
     const salt = bcrypt.genSaltSync(10);
-    const adminPassHash = bcrypt.hashSync('Admin@123456', salt);
-    const userPassHash = bcrypt.hashSync('User@123456', salt);
-    const ramyaPassHash = bcrypt.hashSync('ramya200', salt);
-    const demoConsumerHash = bcrypt.hashSync('User123!', salt);
-    const demoAdminHash = bcrypt.hashSync('Admin123!', salt);
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sec.admin.v2@safecart.internal';
+    const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'K9#mX2$pL8!vQ4%wZ7', salt);
 
     // 1. Pre-seeded Users
     const demoConsumer: User = {
       id: 'usr_consumer_demo',
       name: 'SafeCart Demo Consumer',
       email: 'user@safecart.local',
-      passwordHash: demoConsumerHash,
+      passwordHash: bcrypt.hashSync('User123!', salt),
       role: 'USER',
       createdAt: '2025-01-01T00:00:00.000Z'
     };
 
-    const demoAdmin: User = {
-      id: 'usr_admin_demo',
-      name: 'SafeCart Demo Administrator',
-      email: 'admin@safecart.local',
-      passwordHash: demoAdminHash,
+    const privateAdmin: User = {
+      id: 'usr_sec_admin_private',
+      name: 'SafeCart Security Administrator',
+      email: ADMIN_EMAIL,
+      passwordHash: ADMIN_PASSWORD_HASH,
       role: 'ADMIN',
       createdAt: '2025-01-01T00:00:00.000Z'
-    };
-
-    const adminUser: User = {
-      id: 'usr_admin_01',
-      name: 'Cyber Security Admin',
-      email: 'admin@safecart.security',
-      passwordHash: adminPassHash,
-      role: 'ADMIN',
-      createdAt: '2025-01-10T10:00:00.000Z'
-    };
-
-    const ramyaAdmin: User = {
-      id: 'usr_ramya_01',
-      name: 'Ramya Admin',
-      email: 'ramya@safecart.security',
-      passwordHash: ramyaPassHash,
-      role: 'ADMIN',
-      createdAt: '2025-01-01T00:00:00.000Z'
-    };
-
-    const testAdmin: User = {
-      id: 'usr_test_admin_01',
-      name: 'SafeCart Test Administrator',
-      email: 'test.admin@safecart.test',
-      passwordHash: bcrypt.hashSync('SafeCart#Admin2026!Sec', salt),
-      role: 'ADMIN',
-      createdAt: '2025-01-01T00:00:00.000Z'
-    };
-
-    const regularUser: User = {
-      id: 'usr_shopper_01',
-      name: 'Elena Rostova',
-      email: 'user@safecart.security',
-      passwordHash: userPassHash,
-      role: 'USER',
-      createdAt: '2025-02-15T14:30:00.000Z'
     };
 
     this.users.set(demoConsumer.id, demoConsumer);
-    this.users.set(demoAdmin.id, demoAdmin);
-    this.users.set(testAdmin.id, testAdmin);
-    this.users.set(adminUser.id, adminUser);
-    this.users.set(ramyaAdmin.id, ramyaAdmin);
-    this.users.set(regularUser.id, regularUser);
+    this.users.set(privateAdmin.id, privateAdmin);
 
     // 2. Pre-seeded Websites
     const sampleWebsites: Website[] = [

@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'safecard_JWT_2026_8FK2XP9MQ7';
 
 const initialSalt = bcrypt.genSaltSync(10);
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sec.admin.v2@safecart.internal';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'K9#mX2$pL8!vQ4%wZ7', initialSalt);
+
 const memoryUsers = [
   {
     id: 'usr_consumer_demo',
@@ -14,42 +17,10 @@ const memoryUsers = [
     createdAt: '2025-01-01T00:00:00.000Z'
   },
   {
-    id: 'usr_admin_demo',
-    name: 'SafeCart Demo Administrator',
-    email: 'admin@safecart.local',
-    passwordHash: bcrypt.hashSync('Admin123!', initialSalt),
-    role: 'ADMIN',
-    createdAt: '2025-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'usr_shopper_01',
-    name: 'Elena Rostova',
-    email: 'user@safecart.security',
-    passwordHash: bcrypt.hashSync('User@123456', initialSalt),
-    role: 'USER',
-    createdAt: '2025-02-15T14:30:00.000Z'
-  },
-  {
-    id: 'usr_admin_01',
-    name: 'Cyber Security Admin',
-    email: 'admin@safecart.security',
-    passwordHash: bcrypt.hashSync('Admin@123456', initialSalt),
-    role: 'ADMIN',
-    createdAt: '2025-01-10T10:00:00.000Z'
-  },
-  {
-    id: 'usr_test_admin_01',
-    name: 'SafeCart Test Administrator',
-    email: 'test.admin@safecart.test',
-    passwordHash: bcrypt.hashSync('SafeCart#Admin2026!Sec', initialSalt),
-    role: 'ADMIN',
-    createdAt: '2025-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'usr_ramya_01',
-    name: 'Ramya Admin',
-    email: 'ramya@safecart.security',
-    passwordHash: bcrypt.hashSync('ramya200', initialSalt),
+    id: 'usr_sec_admin_private',
+    name: 'SafeCart Security Administrator',
+    email: ADMIN_EMAIL,
+    passwordHash: ADMIN_PASSWORD_HASH,
     role: 'ADMIN',
     createdAt: '2025-01-01T00:00:00.000Z'
   }
@@ -1888,12 +1859,7 @@ export default async function handler(req, res) {
 
       const trimmedEmail = email.trim().toLowerCase();
       const user = memoryUsers.find(
-        (u) =>
-          u.email.toLowerCase() === trimmedEmail ||
-          u.name.toLowerCase() === trimmedEmail ||
-          (trimmedEmail === 'ramya' && u.email === 'ramya@safecart.security') ||
-          (trimmedEmail === 'user' && u.email === 'user@safecart.local') ||
-          (trimmedEmail === 'admin' && u.email === 'admin@safecart.local')
+        (u) => u.email.toLowerCase() === trimmedEmail || u.name.toLowerCase() === trimmedEmail
       );
 
       if (!user) {
@@ -1909,15 +1875,6 @@ export default async function handler(req, res) {
         isValid = bcrypt.compareSync(password, user.passwordHash);
       } catch {
         isValid = false;
-      }
-
-      if (!isValid) {
-        if (user.email === 'user@safecart.local' && (password === 'User123!' || password === 'User@123456')) isValid = true;
-        if (user.email === 'admin@safecart.local' && (password === 'Admin123!' || password === 'Admin@123456')) isValid = true;
-        if (user.email === 'test.admin@safecart.test' && password === 'SafeCart#Admin2026!Sec') isValid = true;
-        if (user.email === 'user@safecart.security' && (password === 'User@123456' || password === 'User123!')) isValid = true;
-        if (user.email === 'admin@safecart.security' && (password === 'Admin@123456' || password === 'Admin123!')) isValid = true;
-        if (user.email === 'ramya@safecart.security' && password === 'ramya200') isValid = true;
       }
 
       if (!isValid) {
@@ -1962,11 +1919,7 @@ export default async function handler(req, res) {
 
       const trimmedEmail = email.trim().toLowerCase();
       const user = memoryUsers.find(
-        (u) =>
-          u.email.toLowerCase() === trimmedEmail ||
-          u.name.toLowerCase() === trimmedEmail ||
-          (trimmedEmail === 'ramya' && u.email === 'ramya@safecart.security') ||
-          (trimmedEmail === 'admin' && u.email === 'admin@safecart.local')
+        (u) => u.email.toLowerCase() === trimmedEmail || u.name.toLowerCase() === trimmedEmail
       );
 
       if (!user || user.role !== 'ADMIN') {
@@ -1982,12 +1935,6 @@ export default async function handler(req, res) {
         isValid = bcrypt.compareSync(password, user.passwordHash);
       } catch {
         isValid = false;
-      }
-
-      if (!isValid) {
-        if (user.email === 'admin@safecart.local' && (password === 'Admin123!' || password === 'Admin@123456')) isValid = true;
-        if (user.email === 'admin@safecart.security' && (password === 'Admin@123456' || password === 'Admin123!')) isValid = true;
-        if (user.email === 'ramya@safecart.security' && password === 'ramya200') isValid = true;
       }
 
       if (!isValid) {
