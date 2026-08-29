@@ -4,8 +4,8 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'safecard_JWT_2026_8FK2XP9MQ7';
 
 const initialSalt = bcrypt.genSaltSync(10);
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sec.admin.v2@safecart.internal';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'K9#mX2$pL8!vQ4%wZ7', initialSalt);
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@safecart.app';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'SafeCart#2026!AdminSecuredKey', initialSalt);
 
 const memoryUsers = [
   {

@@ -39,8 +39,8 @@ export class DataStore {
 
   private seedInitialData() {
     const salt = bcrypt.genSaltSync(10);
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sec.admin.v2@safecart.internal';
-    const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'K9#mX2$pL8!vQ4%wZ7', salt);
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@safecart.app';
+    const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'SafeCart#2026!AdminSecuredKey', salt);
 
     // 1. Pre-seeded Users
     const demoConsumer: User = {
