@@ -17,8 +17,15 @@ interface SignalCardProps {
 }
 
 export const SignalCard: React.FC<SignalCardProps> = ({ signal }) => {
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
+  const category = signal?.category || 'COMMUNITY_SIGNALS';
+  const severity = signal?.severity || 'LOW';
+  const title = signal?.title || 'Security Indicator';
+  const description = signal?.description || '';
+  const points = typeof signal?.points === 'number' ? signal.points : 0;
+  const evidence = signal?.evidence;
+
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
       case 'SSL_SECURITY':
         return <Lock className="w-4 h-4" />;
       case 'DOMAIN_INTEGRITY':
@@ -34,8 +41,8 @@ export const SignalCard: React.FC<SignalCardProps> = ({ signal }) => {
     }
   };
 
-  const getSeverityStyle = (severity: string) => {
-    switch (severity) {
+  const getSeverityStyle = (sev: string) => {
+    switch (sev) {
       case 'CRITICAL':
         return {
           border: 'border-red-500/40 bg-red-950/20',
@@ -69,7 +76,7 @@ export const SignalCard: React.FC<SignalCardProps> = ({ signal }) => {
     }
   };
 
-  const style = getSeverityStyle(signal.severity);
+  const style = getSeverityStyle(severity);
 
   return (
     <div
@@ -78,43 +85,43 @@ export const SignalCard: React.FC<SignalCardProps> = ({ signal }) => {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-slate-950 text-slate-300 border border-slate-800">
-            {getCategoryIcon(signal.category)}
+            {getCategoryIcon(category)}
           </div>
           <div>
             <h4 className="font-black text-sm sm:text-base text-white uppercase tracking-tight flex items-center gap-2">
-              {signal.title}
+              {title}
             </h4>
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono font-bold">
-              {signal.category.replace(/_/g, ' ')}
+              {category.replace(/_/g, ' ')}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {signal.points !== 0 && (
+          {points !== 0 && (
             <span
               className={`text-xs font-mono font-black px-2.5 py-1 rounded-xl border ${
-                signal.points > 0 ? 'text-red-300 bg-red-950/60 border-red-500/40' : 'text-emerald-300 bg-emerald-950/60 border-emerald-500/40'
+                points > 0 ? 'text-red-300 bg-red-950/60 border-red-500/40' : 'text-emerald-300 bg-emerald-950/60 border-emerald-500/40'
               }`}
             >
-              {signal.points > 0 ? `+${signal.points} RISK` : `${signal.points} RISK`}
+              {points > 0 ? `+${points} RISK` : `${points} RISK`}
             </span>
           )}
           <div
             className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full border uppercase font-mono ${style.badge}`}
           >
             {style.icon}
-            {signal.severity}
+            {severity}
           </div>
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-slate-300 leading-relaxed font-medium">{signal.description}</p>
+      <p className="mt-3 text-xs text-slate-300 leading-relaxed font-medium">{description}</p>
 
-      {signal.evidence && (
+      {evidence && (
         <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center gap-2 text-xs text-slate-400 font-mono">
           <span className="text-slate-500 font-bold uppercase text-[10px]">Evidence:</span>
-          <span className="text-slate-300 truncate font-medium">{signal.evidence}</span>
+          <span className="text-slate-300 truncate font-medium">{evidence}</span>
         </div>
       )}
     </div>

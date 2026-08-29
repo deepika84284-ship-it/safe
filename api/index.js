@@ -903,9 +903,21 @@ function analyzeWebsiteDomain(rawUrl) {
   clean = clean.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0].split('?')[0];
   const isHttps = rawUrl.toLowerCase().startsWith('https://') || !rawUrl.toLowerCase().startsWith('http://');
   const domain = clean.toLowerCase();
+  const tld = domain.includes('.') ? domain.split('.').pop() : 'com';
+  const nowStr = new Date().toISOString();
 
   const scanId = 'scan_' + domain.replace(/[^a-zA-Z0-9]/g, '_');
   const websiteId = 'web_' + domain.replace(/[^a-zA-Z0-9]/g, '_');
+
+  const defaultMetadata = {
+    ipResolved: '104.18.22.45',
+    httpStatus: 200,
+    redirectCount: 0,
+    responseTimeMs: 110,
+    hasSsl: isHttps,
+    tld: tld,
+    scanTimestamp: nowStr
+  };
 
   const knownAuthentic = [
     'amazon.com', 'amazon.in', 'myntra.com', 'nike.com', 'flipkart.com',
@@ -929,8 +941,8 @@ function analyzeWebsiteDomain(rawUrl) {
         confirmedReports: 0,
         pendingReports: 0,
         rejectedReports: 0,
-        firstScannedAt: new Date().toISOString(),
-        lastScannedAt: new Date().toISOString(),
+        firstScannedAt: nowStr,
+        lastScannedAt: nowStr,
         signalsSummary: {
           hasHttps: true,
           hasValidSsl: true,
@@ -975,7 +987,9 @@ function analyzeWebsiteDomain(rawUrl) {
         recommendations: [
           'Safe to browse and purchase directly.',
           'Always verify the SSL lock icon in your browser address bar.'
-        ]
+        ],
+        metadata: defaultMetadata,
+        createdAt: nowStr
       }
     };
   }
@@ -995,8 +1009,8 @@ function analyzeWebsiteDomain(rawUrl) {
         confirmedReports: 34,
         pendingReports: 0,
         rejectedReports: 0,
-        firstScannedAt: new Date().toISOString(),
-        lastScannedAt: new Date().toISOString(),
+        firstScannedAt: nowStr,
+        lastScannedAt: nowStr,
         signalsSummary: {
           hasHttps: isHttps,
           hasValidSsl: isHttps,
@@ -1041,7 +1055,9 @@ function analyzeWebsiteDomain(rawUrl) {
         recommendations: [
           'DO NOT place orders or provide payment details on this site.',
           'If you have already transferred money via UPI, call 1930 Cyber Crime Helpline immediately.'
-        ]
+        ],
+        metadata: defaultMetadata,
+        createdAt: nowStr
       }
     };
   }
@@ -1067,8 +1083,8 @@ function analyzeWebsiteDomain(rawUrl) {
         confirmedReports: 0,
         pendingReports: 0,
         rejectedReports: 0,
-        firstScannedAt: new Date().toISOString(),
-        lastScannedAt: new Date().toISOString(),
+        firstScannedAt: nowStr,
+        lastScannedAt: nowStr,
         signalsSummary: {
           hasHttps: isHttps,
           hasValidSsl: isHttps,
@@ -1113,7 +1129,9 @@ function analyzeWebsiteDomain(rawUrl) {
         recommendations: [
           `Do NOT order from this domain. Access the official brand portal at ${matchedBrand}.com.`,
           'Never make advance UPI payments for heavily discounted surplus inventory.'
-        ]
+        ],
+        metadata: defaultMetadata,
+        createdAt: nowStr
       }
     };
   }
@@ -1132,8 +1150,8 @@ function analyzeWebsiteDomain(rawUrl) {
         confirmedReports: 0,
         pendingReports: 0,
         rejectedReports: 0,
-        firstScannedAt: new Date().toISOString(),
-        lastScannedAt: new Date().toISOString(),
+        firstScannedAt: nowStr,
+        lastScannedAt: nowStr,
         signalsSummary: {
           hasHttps: isHttps,
           hasValidSsl: isHttps,
@@ -1178,7 +1196,9 @@ function analyzeWebsiteDomain(rawUrl) {
         recommendations: [
           'Exercise caution. Verify merchant GSTIN registration before purchasing.',
           'Prefer credit card or escrow protected checkout over direct UPI transfers.'
-        ]
+        ],
+        metadata: defaultMetadata,
+        createdAt: nowStr
       }
     };
   }
@@ -1196,8 +1216,8 @@ function analyzeWebsiteDomain(rawUrl) {
       confirmedReports: 0,
       pendingReports: 0,
       rejectedReports: 0,
-      firstScannedAt: new Date().toISOString(),
-      lastScannedAt: new Date().toISOString(),
+      firstScannedAt: nowStr,
+      lastScannedAt: nowStr,
       signalsSummary: {
         hasHttps: isHttps,
         hasValidSsl: isHttps,
@@ -1233,7 +1253,9 @@ function analyzeWebsiteDomain(rawUrl) {
       recommendations: [
         'Check for verified GST registration on gst.gov.in before paying.',
         'Use credit card or escrow protected checkout for new merchants.'
-      ]
+      ],
+      metadata: defaultMetadata,
+      createdAt: nowStr
     }
   };
 }
